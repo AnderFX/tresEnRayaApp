@@ -17,6 +17,23 @@ public class Tablero {
 
     public static final int TAMANIO = 3;
 
+    /**
+     * Las 8 líneas ganadoras del tablero (3 filas, 3 columnas, 2 diagonales),
+     * expresadas como coordenadas {fila, columna}. Se centraliza aquí para
+     * que verificarGanador() y contarLineasDisponibles() no dupliquen la
+     * misma lista de líneas cada uno por su lado.
+     */
+    private static final int[][][] LINEAS = {
+            {{0, 0}, {0, 1}, {0, 2}}, // fila 0
+            {{1, 0}, {1, 1}, {1, 2}}, // fila 1
+            {{2, 0}, {2, 1}, {2, 2}}, // fila 2
+            {{0, 0}, {1, 0}, {2, 0}}, // columna 0
+            {{0, 1}, {1, 1}, {2, 1}}, // columna 1
+            {{0, 2}, {1, 2}, {2, 2}}, // columna 2
+            {{0, 0}, {1, 1}, {2, 2}}, // diagonal principal
+            {{0, 2}, {1, 1}, {2, 0}}  // diagonal secundaria
+    };
+
     private Ficha[][] casillas;
 
     public Tablero() {
@@ -64,8 +81,23 @@ public class Tablero {
         }
         return disponibles;
     }
-    
+
+    /**
+     * Indica si la ficha dada completó una línea (fila, columna o diagonal).
+     */
     public boolean verificarGanador(Ficha ficha) {
+        for (int[][] linea : LINEAS) {
+            boolean completaLinea = true;
+            for (int[] celda : linea) {
+                if (casillas[celda[0]][celda[1]] != ficha) {
+                    completaLinea = false;
+                    break;
+                }
+            }
+            if (completaLinea) {
+                return true;
+            }
+        }
         return false;
     }
     
@@ -87,7 +119,6 @@ public class Tablero {
                     "Posición fuera del tablero: (" + fila + ", " + columna + ")");
         }
     }
-
 
     // Getters y Setters 
 
