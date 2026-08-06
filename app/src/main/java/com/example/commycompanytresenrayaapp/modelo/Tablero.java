@@ -28,11 +28,25 @@ public class Tablero {
         }
     }
 
+    /**
+     * Coloca una ficha en la casilla indicada.
+     */
     public void llenarCasilla(int fila, int columna, Ficha ficha) {
+        validarPosicion(fila, columna);
+        if (casillas[fila][columna] != Ficha.VACIA) {
+            throw new IllegalStateException(
+                    "La casilla (" + fila + ", " + columna + ") ya está ocupada.");
+        }
         casillas[fila][columna] = ficha;
     }
 
+    /**
+     * Vacía la casilla indicada. Se usa junto con llenarCasilla() para que
+     * Minimax pueda probar jugadas futuras sobre un mismo tablero de trabajo
+     * sin tener que clonar en cada nivel del árbol.
+     */
     public void deshacerCasilla(int fila, int columna) {
+        validarPosicion(fila, columna);
         casillas[fila][columna] = Ficha.VACIA;
     }
     
@@ -53,6 +67,17 @@ public class Tablero {
         Tablero copia = new Tablero();
         return copia;
     }
+
+    /**
+     * Valida que una coordenada esté dentro de los límites del tablero.
+     */
+    private void validarPosicion(int fila, int columna) {
+        if (fila < 0 || fila >= TAMANIO || columna < 0 || columna >= TAMANIO) {
+            throw new IllegalArgumentException(
+                    "Posición fuera del tablero: (" + fila + ", " + columna + ")");
+        }
+    }
+
 
     // Getters y Setters 
 
