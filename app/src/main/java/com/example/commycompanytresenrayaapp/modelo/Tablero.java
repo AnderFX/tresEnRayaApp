@@ -124,9 +124,20 @@ public class Tablero {
         }
         return contador;
     }
-    
+
+    /**
+     * Retorna una copia independiente del tablero (deep copy). Es necesaria
+     * para que, si se decide guardar el estado en vez de deshacer jugadas,
+     * cada NodoJugada conserve su propio estado sin verse afectado por
+     * cambios posteriores sobre el tablero original.
+     */
     public Tablero clonar() {
         Tablero copia = new Tablero();
+        for (int fila = 0; fila < TAMANIO; fila++) {
+            for (int columna = 0; columna < TAMANIO; columna++) {
+                copia.casillas[fila][columna] = this.casillas[fila][columna];
+            }
+        }
         return copia;
     }
 
