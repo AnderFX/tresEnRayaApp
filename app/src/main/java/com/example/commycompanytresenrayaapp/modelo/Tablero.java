@@ -100,14 +100,42 @@ public class Tablero {
         }
         return false;
     }
-    
+
+    /**
+     * Cuenta cuántas de las 8 líneas del tablero (3 filas, 3 columnas, 2 diagonales)
+     * siguen "disponibles" para la ficha dada, es decir, no contienen ninguna ficha
+     * del oponente. Esta es la base de la función de utilidad del enunciado:
+     * u_jugador(t) = P_jugador - P_oponente.
+     */
     public int contarLineasDisponibles(Ficha ficha) {
-        return 0;
+        Ficha oponente = obtenerOponente(ficha);
+        int contador = 0;
+        for (int[][] linea : LINEAS) {
+            boolean tieneOponente = false;
+            for (int[] celda : linea) {
+                if (casillas[celda[0]][celda[1]] == oponente) {
+                    tieneOponente = true;
+                    break;
+                }
+            }
+            if (!tieneOponente) {
+                contador++;
+            }
+        }
+        return contador;
     }
     
     public Tablero clonar() {
         Tablero copia = new Tablero();
         return copia;
+    }
+
+    /**
+     * Retorna la ficha contraria a la dada (X <-> O). Se usa únicamente
+     * dentro de contarLineasDisponibles() para saber cuál es "el oponente".
+     */
+    private Ficha obtenerOponente(Ficha ficha) {
+        return (ficha == Ficha.X) ? Ficha.O : Ficha.X;
     }
 
     /**
