@@ -49,9 +49,19 @@ public class Tablero {
         validarPosicion(fila, columna);
         casillas[fila][columna] = Ficha.VACIA;
     }
-    
+
+    /**
+     * Retorna la lista de coordenadas {fila, columna} de las casillas libres.
+     */
     public List<int[]> obtenerCasillasDisponibles() {
         List<int[]> disponibles = new ArrayList<>();
+        for (int fila = 0; fila < TAMANIO; fila++) {
+            for (int columna = 0; columna < TAMANIO; columna++) {
+                if (casillas[fila][columna] == Ficha.VACIA) {
+                    disponibles.add(new int[]{fila, columna});
+                }
+            }
+        }
         return disponibles;
     }
     
