@@ -1,112 +1,146 @@
 package com.example.commycompanytresenrayaapp;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
+import android.view.Gravity;
+import android.view.View;
 import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
-import com.example.commycompanytresenrayaapp.controlador.ObservadorJuego;
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
+import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
 
 /**
- * Punto de entrada de la app y, a la vez, la Vista del patron MVC para
- * este primer prototipo: infla el layout XML del tablero, conecta cada
- * boton con ControladorJuego.jugarTurnoHumano() y, como ObservadorJuego,
- * refleja en la UI cada jugada (propia o de la PC) y el fin de la partida.
+ * Punto de entrada de la app. Siguiendo el diagrama de clases original,
+ * MainActivity es solo el "ensamblador": crea el Modelo (Tablero,
+ * Minimax, ControladorJuego), instancia la Vista (PantallaJuego, que
+ * implementa ObservadorJuego y construye su propia UI por codigo) y la
+ * incrusta en la pantalla. MainActivity no conoce Fichas puestas ni
+ * turnos directamente; toda esa logica vive en ControladorJuego y se
+ * refleja a traves de PantallaJuego.
  */
-public class MainActivity extends AppCompatActivity implements ObservadorJuego {
-
-    // Configuracion fija de este primer prototipo. La seleccion de fichas
-    // y de quien empieza (requerimiento obligatorio del enunciado) queda
-    // pendiente para una pantalla de configuracion inicial.
-    private static final Ficha FICHA_HUMANO = Ficha.X;
-    private static final Ficha FICHA_PC = Ficha.O;
-    private static final boolean HUMANO_EMPIEZA = true;
+public class MainActivity extends AppCompatActivity {
 
     private ControladorJuego controlador;
-    private final Button[][] botones = new Button[3][3];
-    private TextView textoEstado;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         setTitle("Tres en Raya vs. Computadora");
-
-        enlazarVistas();
-        iniciarPartida();
+        mostrarPantallaConfiguracion();   // en vez de iniciarPartida() directo
     }
 
-    private void enlazarVistas() {
-        textoEstado = findViewById(R.id.textoEstado);
+    private void mostrarPantallaConfiguracion() {
+        LinearLayout config = new LinearLayout(this);
+        config.setOrientation(LinearLayout.VERTICAL);
+        config.setGravity(Gravity.CENTER);
+        int padding = dpToPx(24);
+        config.setPadding(padding, padding, padding, padding);
 
-        botones[0][0] = findViewById(R.id.boton00);
-        botones[0][1] = findViewById(R.id.boton01);
-        botones[0][2] = findViewById(R.id.boton02);
-        botones[1][0] = findViewById(R.id.boton10);
-        botones[1][1] = findViewById(R.id.boton11);
-        botones[1][2] = findViewById(R.id.boton12);
-        botones[2][0] = findViewById(R.id.boton20);
-        botones[2][1] = findViewById(R.id.boton21);
-        botones[2][2] = findViewById(R.id.boton22);
+        // --- GRUPO 1: SÍMBOLO ---
+        TextView tituloSimbolo = new TextView(this);
+        tituloSimbolo.setText("¿Con qué símbolo quieres jugar?");
+        config.addView(tituloSimbolo);
 
-        for (int fila = 0; fila < 3; fila++) {
-            for (int columna = 0; columna < 3; columna++) {
-                final int f = fila;
-                final int c = columna;
-                botones[fila][columna].setOnClickListener(v -> controlador.jugarTurnoHumano(f, c));
-            }
-        }
+        RadioGroup grupoSimbolo = new RadioGroup(this);
 
-        Button botonReiniciar = findViewById(R.id.botonReiniciar);
-        botonReiniciar.setOnClickListener(v -> recreate());
+        RadioButton opcionX = new RadioButton(this);
+        opcionX.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionX.setText("X");
+        opcionX.setChecked(true);
+
+        RadioButton opcionO = new RadioButton(this);
+        opcionO.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionO.setText("O");
+
+        grupoSimbolo.addView(opcionX);
+        grupoSimbolo.addView(opcionO);
+        config.addView(grupoSimbolo);
+
+        // --- GRUPO 2: TURNO ---
+        TextView tituloTurno = new TextView(this);
+        tituloTurno.setText("¿Quién empieza la partida?");
+        config.addView(tituloTurno);
+
+        RadioGroup grupoTurno = new RadioGroup(this);
+
+        RadioButton opcionHumano = new RadioButton(this);
+        opcionHumano.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionHumano.setText("Yo (humano)");
+        opcionHumano.setChecked(true);
+
+        RadioButton opcionPC = new RadioButton(this);
+        opcionPC.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionPC.setText("La computadora");
+
+        grupoTurno.addView(opcionHumano);
+        grupoTurno.addView(opcionPC);
+        config.addView(grupoTurno);
+
+        // --- BOTÓN COMENZAR ---
+        Button botonComenzar = new Button(this);
+        botonComenzar.setText("Comenzar Juego");
+        botonComenzar.setOnClickListener(v -> {
+            Ficha fichaHumano = opcionX.isChecked() ? Ficha.X : Ficha.O;
+            boolean humanoEmpieza = opcionHumano.isChecked();
+            iniciarPartida(fichaHumano, humanoEmpieza);
+        });
+        config.addView(botonComenzar);
+
+        setContentView(config);
     }
 
-    private void iniciarPartida() {
+    // iniciarPartida ahora recibe parámetros en vez de usar las constantes fijas
+    private void iniciarPartida(Ficha fichaHumano, boolean humanoEmpieza) {
+        Ficha fichaPC = (fichaHumano == Ficha.X) ? Ficha.O : Ficha.X;
+
         Tablero tablero = new Tablero();
-        Minimax algoritmo = new Minimax(tablero, FICHA_PC, FICHA_HUMANO);
+        Minimax algoritmo = new Minimax(tablero, fichaPC, fichaHumano);
 
         controlador = new ControladorJuego(tablero, algoritmo);
-        controlador.setFichaHumano(FICHA_HUMANO);
-        controlador.setFichaPC(FICHA_PC);
-        controlador.setTurnoHumano(HUMANO_EMPIEZA);
-        controlador.agregarObservador(this);
+        controlador.setFichaHumano(fichaHumano);
+        controlador.setFichaPC(fichaPC);
+        controlador.setTurnoHumano(humanoEmpieza);
 
-        textoEstado.setText(turnoTexto());
+        PantallaJuego pantalla = new PantallaJuego(this, controlador);
+        setContentView(construirContenedor(pantalla));
         controlador.iniciarJuego();
     }
 
-    private String turnoTexto() {
-        return controlador.isTurnoHumano()
-                ? "Tu turno (" + FICHA_HUMANO.name() + ")"
-                : "Pensando...";
+    private LinearLayout construirContenedor(PantallaJuego pantalla) {
+        LinearLayout contenedor = new LinearLayout(this);
+        contenedor.setOrientation(LinearLayout.VERTICAL);
+        contenedor.setGravity(Gravity.CENTER);
+        int padding = dpToPx(24);
+        contenedor.setPadding(padding, padding, padding, padding);
+        contenedor.addView(pantalla);
+        contenedor.addView(construirBotonReiniciar());
+        return contenedor;
     }
 
-    @Override
-    public void onJugadaRealizada(int fila, int columna, Ficha ficha) {
-        Button boton = botones[fila][columna];
-        boton.setText(ficha == Ficha.VACIA ? "" : ficha.name());
-        boton.setEnabled(ficha == Ficha.VACIA);
-        textoEstado.setText(turnoTexto());
+    private Button construirBotonReiniciar() {
+        Button botonReiniciar = new Button(this);
+        botonReiniciar.setText("Nueva Partida");
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dpToPx(16);
+        botonReiniciar.setLayoutParams(params);
+
+        botonReiniciar.setOnClickListener(v -> recreate());
+        return botonReiniciar;
     }
 
-    @Override
-    public void onJuegoTerminado(String mensaje) {
-        textoEstado.setText(mensaje);
-        for (Button[] fila : botones) {
-            for (Button boton : fila) {
-                boton.setEnabled(false);
-            }
-        }
-        new AlertDialog.Builder(this)
-                .setTitle("Tres en Raya")
-                .setMessage(mensaje)
-                .setPositiveButton("Aceptar", null)
-                .show();
+    private int dpToPx(int dp) {
+        float density = getResources().getDisplayMetrics().density;
+        return Math.round(dp * density);
     }
 }
