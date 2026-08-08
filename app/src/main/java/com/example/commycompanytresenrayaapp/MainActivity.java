@@ -17,15 +17,6 @@ import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
 import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
 
-/**
- * Punto de entrada de la app. Siguiendo el diagrama de clases original,
- * MainActivity es solo el "ensamblador": crea el Modelo (Tablero,
- * Minimax, ControladorJuego), instancia la Vista (PantallaJuego, que
- * implementa ObservadorJuego y construye su propia UI por codigo) y la
- * incrusta en la pantalla. MainActivity no conoce Fichas puestas ni
- * turnos directamente; toda esa logica vive en ControladorJuego y se
- * refleja a traves de PantallaJuego.
- */
 public class MainActivity extends AppCompatActivity {
 
     private ControladorJuego controlador;
@@ -34,7 +25,7 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setTitle("Tres en Raya vs. Computadora");
-        mostrarPantallaConfiguracion();   // en vez de iniciarPartida() directo
+        mostrarPantallaConfiguracion();   
     }
 
     private void mostrarPantallaConfiguracion() {
@@ -52,12 +43,12 @@ public class MainActivity extends AppCompatActivity {
         RadioGroup grupoSimbolo = new RadioGroup(this);
 
         RadioButton opcionX = new RadioButton(this);
-        opcionX.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionX.setId(View.generateViewId());
         opcionX.setText("X");
         opcionX.setChecked(true);
 
         RadioButton opcionO = new RadioButton(this);
-        opcionO.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionO.setId(View.generateViewId());
         opcionO.setText("O");
 
         grupoSimbolo.addView(opcionX);
@@ -72,12 +63,12 @@ public class MainActivity extends AppCompatActivity {
         RadioGroup grupoTurno = new RadioGroup(this);
 
         RadioButton opcionHumano = new RadioButton(this);
-        opcionHumano.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionHumano.setId(View.generateViewId());
         opcionHumano.setText("Yo (humano)");
         opcionHumano.setChecked(true);
 
         RadioButton opcionPC = new RadioButton(this);
-        opcionPC.setId(View.generateViewId()); // 👈 ¡LÍNEA CLAVE!
+        opcionPC.setId(View.generateViewId());
         opcionPC.setText("La computadora");
 
         grupoTurno.addView(opcionHumano);
@@ -97,7 +88,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(config);
     }
 
-    // iniciarPartida ahora recibe parámetros en vez de usar las constantes fijas
     private void iniciarPartida(Ficha fichaHumano, boolean humanoEmpieza) {
         Ficha fichaPC = (fichaHumano == Ficha.X) ? Ficha.O : Ficha.X;
 
