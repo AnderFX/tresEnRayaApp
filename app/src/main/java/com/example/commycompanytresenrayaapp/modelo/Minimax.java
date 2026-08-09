@@ -22,7 +22,10 @@ public class Minimax {
     }
 
     public void generarArbolDeJuego(ArbolNario arbol, int profundidad) {
-    }
+        NodoJugada raiz = new NodoJugada(tableroActual.clonar(), -1, -1);
+        arbol.setRaiz(raiz);
+        generarHijos(raiz, profundidad, fichaPC);
+   } 
 
     private void generarHijos(NodoJugada nodoPadre, int profundidad, Ficha fichaTurno) {
         if (profundidad <= 0) {
@@ -134,12 +137,6 @@ public class Minimax {
 
     public void setFichaHumano(Ficha fichaHumano) {
         this.fichaHumano = fichaHumano;
-    }
-
-    public void generarArbolDeJuego(ArbolNario arbol, int profundidad) {
-        NodoJugada raiz = new NodoJugada(tableroActual.clonar(), -1, -1);
-        arbol.setRaiz(raiz);
-        generarHijos(raiz, profundidad, fichaPC);
-   }  
+    } 
 }
 
