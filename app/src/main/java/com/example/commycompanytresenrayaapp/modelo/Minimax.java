@@ -9,6 +9,7 @@ import java.util.List;
 
 public class Minimax {
 
+    private static final int PROFUNDIDAD_ANALISIS = 2;
     private Tablero tableroActual;
 
     private Ficha fichaPC;
@@ -83,8 +84,32 @@ public class Minimax {
     }
 
     public int[] obtenerMejorJugada() {
-        return new int[]{-1, -1};
+        ArbolNario arbol = new ArbolNario();
+        generarArbolDeJuego(arbol, PROFUNDIDAD_ANALISIS);
+
+        NodoJugada raiz = arbol.getRaiz();
+        minimax(raiz, PROFUNDIDAD_ANALISIS, true);
+
+        NodoJugada mejorJugada = null;
+        int mejorUtilidad = Integer.MIN_VALUE;
+
+        for (NodoJugada hijo : raiz.getHijos()) {
+            if (mejorJugada == null || hijo.getUtilidad() > mejorUtilidad) {
+                mejorUtilidad = hijo.getUtilidad();
+                mejorJugada = hijo;
+            }
+        }
+
+        if (mejorJugada == null) {
+            return new int[]{-1, -1};
+        }
+
+        return new int[]{mejorJugada.getFilaJugada(), mejorJugada.getColumnaJugada()};
     }
+
+    private int calcularUtilidad(Tablero tablero) {
+        return tablero.contarLineasDisponibles(fichaPC) - tablero.contarLineasDisponibles(fichaHumano);
+    }   
 
     // Getters y Setters 
     public Tablero getTableroActual() {
