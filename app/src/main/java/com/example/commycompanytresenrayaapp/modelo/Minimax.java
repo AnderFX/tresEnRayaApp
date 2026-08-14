@@ -24,6 +24,15 @@ public class Minimax {
     private Ficha fichaPC;
     private Ficha fichaHumano;
 
+    /**
+     * Último árbol n-ario generado por {@link #obtenerMejorJugada()}. Se
+     * guarda únicamente para poder mostrarlo después (funcionalidad
+     * opcional de visualización del árbol); no participa en el cálculo
+     * de la jugada en sí. Puede ser null si obtenerMejorJugada() todavía
+     * no se ha llamado sobre esta instancia.
+     */
+    private ArbolNario ultimoArbolGenerado;
+
     public Minimax(Tablero tableroActual, Ficha fichaPC, Ficha fichaHumano) {
         this.tableroActual = tableroActual;
         this.fichaPC = fichaPC;
@@ -141,12 +150,18 @@ public class Minimax {
      * minimax sobre él y retorna la coordenada {fila, columna} de la jugada
      * de la PC con mayor utilidad garantizada.
      *
+     * <p>Como efecto secundario, guarda el árbol generado en
+     * {@link #ultimoArbolGenerado} para que pueda consultarse después
+     * mediante {@link #getUltimoArbolGenerado()} (usado, por ejemplo, para
+     * mostrar el árbol de decisión en pantalla).</p>
+     *
      * @return {fila, columna} de la mejor jugada, o {-1, -1} si no hay
      *         casillas disponibles (tablero lleno o juego ya terminado)
      */
     public int[] obtenerMejorJugada() {
         ArbolNario arbol = new ArbolNario();
         generarArbolDeJuego(arbol, PROFUNDIDAD_ANALISIS);
+        this.ultimoArbolGenerado = arbol; // ← única línea nueva dentro de este método
 
         NodoJugada raiz = arbol.getRaiz();
         minimax(raiz, PROFUNDIDAD_ANALISIS, true);
@@ -177,7 +192,7 @@ public class Minimax {
         return tablero.contarLineasDisponibles(fichaPC) - tablero.contarLineasDisponibles(fichaHumano);
     }
 
-    // Getters y Setters 
+    // Getters y Setters
 
     public Tablero getTableroActual() {
         return tableroActual;
@@ -201,5 +216,9 @@ public class Minimax {
 
     public void setFichaHumano(Ficha fichaHumano) {
         this.fichaHumano = fichaHumano;
+    }
+
+    public ArbolNario getUltimoArbolGenerado() {
+        return ultimoArbolGenerado;
     }
 }
