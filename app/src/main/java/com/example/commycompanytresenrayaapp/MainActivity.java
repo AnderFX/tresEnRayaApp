@@ -266,7 +266,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     @Override
     public void onCambioDeTurno(Ficha fichaEnTurno) {
         if (requiereJugadaAutomatica(fichaEnTurno)) {
-            indicadorTurno.setText("La computadora está pensando...");
+            indicadorTurno.setText(textoPensando(fichaEnTurno));
             pantalla.setInteractivo(false);
             long demora = controlador.getModoJuego() == ModoJuego.PC_VS_PC
                     ? DEMORA_PC_VS_PC_MS
@@ -284,6 +284,14 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
             return true;
         }
         return modo == ModoJuego.CONTRA_PC && fichaEnTurno == controlador.getFichaPC();
+    }
+
+    private String textoPensando(Ficha fichaEnTurno) {
+        if (controlador.getModoJuego() == ModoJuego.PC_VS_PC) {
+            String bot = (fichaEnTurno == Ficha.X) ? "Bot 1" : "Bot 2";
+            return bot + " está pensando...";
+        }
+        return "La computadora está pensando...";
     }
 
     @Override
