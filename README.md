@@ -53,6 +53,7 @@ classDiagram
         + generarArbolDeJuegoPara(ArbolNario arbol, int profundidad, Ficha fichaQueDecide) void
         + minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoDeQuienDecide, Ficha fichaQueDecide) int
         + obtenerMejorJugadaPara(Ficha fichaQueDecide) int[]
+        + getRaizUltimoAnalisis() NodoJugada
     }
     class ControladorJuego {
         - Tablero tablero
@@ -62,12 +63,15 @@ classDiagram
         - ModoJuego modoJuego
         - Ficha fichaEnTurno
         - List~ObservadorJuego~ observadores
+        - NodoJugada raizArbolPartida
+        - NodoJugada nodoActualEnArbol
         + ControladorJuego(Tablero tablero, Minimax algoritmo)
         + iniciarJuego() void
         + agregarObservador(ObservadorJuego obs) void
         + jugarTurno(int fila, int columna) void
         + obtenerSugerenciaParaTurnoActual() int[]
         + realizarJugadaAutomatica() void
+        + getRaizArbolPartida() NodoJugada
         - notificarJugada(int fila, int columna, Ficha ficha) void
         - notificarFinDeJuego(String mensaje) void
         - notificarCambioDeTurno() void
@@ -97,9 +101,18 @@ classDiagram
         <<Activity>>
         # onCreate(Bundle) void
     }
+    class VistaArbol {
+        - NodoJugada raiz
+        + actualizar(NodoJugada nuevaRaiz) void
+        + onJugadaRealizada(int fila, int columna, Ficha ficha) void
+        + onJuegoTerminado(String mensaje) void
+        + onCambioDeTurno(Ficha fichaEnTurno) void
+    }
 
     PantallaJuego ..|> ObservadorJuego : Implementa
     MainActivity ..|> ObservadorJuego : Implementa
+    VistaArbol ..|> ObservadorJuego : Implementa
+    VistaArbol ..> NodoJugada : Dibuja
     PantallaJuego --> ControladorJuego : Delega eventos
     ControladorJuego o-- ObservadorJuego : Notifica
     ControladorJuego --> ModoJuego : Usa
