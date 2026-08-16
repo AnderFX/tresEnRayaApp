@@ -1,6 +1,8 @@
 package com.example.commycompanytresenrayaapp;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -29,8 +31,12 @@ import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
  */
 public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
+    private static final long DEMORA_JUGADA_PC_MS = 500;
+
     private ControladorJuego controlador;
+    private PantallaJuego pantalla;
     private TextView indicadorTurno;
+    private final Handler handler = new Handler(Looper.getMainLooper());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -166,7 +172,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     }
 
     private void montarPantallaDeJuego() {
-        PantallaJuego pantalla = new PantallaJuego(this, controlador);
+        pantalla = new PantallaJuego(this, controlador);
         controlador.agregarObservador(this);
         setContentView(construirContenedor(pantalla));
         controlador.iniciarJuego();
@@ -231,11 +237,25 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     @Override
     public void onJuegoTerminado(String mensaje) {
         indicadorTurno.setText("Juego terminado.");
+        pantalla.setInteractivo(false);
     }
 
     @Override
     public void onCambioDeTurno(Ficha fichaEnTurno) {
+        if (controlador.getModoJuego() == ModoJuego.CONTRA_PC && fichaEnTurno == controlador.getFichaPC()) {
+            indicadorTurno.setText("La computadora está pensando...");
+            pantalla.setInteractivo(false);
+            handler.postDelayed(controlador::realizarJugadaPC, DEMORA_JUGADA_PC_MS);
+            return;
+        }
+        pantalla.setInteractivo(true);
         indicadorTurno.setText("Turno de: " + fichaEnTurno.name());
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        handler.removeCallbacksAndMessages(null);
     }
 
     private int dpToPx(int dp) {

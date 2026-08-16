@@ -30,22 +30,18 @@ public class ControladorJuego {
     }
 
     /**
-     * Arranca la partida. Si el primer turno le corresponde a la PC
-     * (modoJuego == CONTRA_PC y fichaEnTurno == fichaPC), le pide de
-     * inmediato su jugada a Minimax. En cualquier otro caso, notifica el
-     * turno inicial y el controlador queda a la espera de que la vista
-     * invoque jugarTurno() cuando el usuario toque una casilla.
+     * Arranca la partida notificando el turno inicial. Quien escuche
+     * onCambioDeTurno() decide que hacer con ese turno: si le corresponde
+     * a la PC, es responsabilidad de ese observador invocar
+     * realizarJugadaPC() (posiblemente con una demora o animacion antes);
+     * el controlador ya no lo hace por su cuenta.
      *
      * <p>fichaHumano, fichaPC, modoJuego y fichaEnTurno deben configurarse
      * (via sus setters) antes de llamar a este metodo.</p>
      */
     public void iniciarJuego() {
         juegoTerminado = false;
-        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno == fichaPC) {
-            realizarJugadaPC();
-        } else {
-            notificarCambioDeTurno();
-        }
+        notificarCambioDeTurno();
     }
 
     public void agregarObservador(ObservadorJuego obs) {
@@ -57,9 +53,9 @@ public class ControladorJuego {
      * la casilla (fila, columna): sirve tanto para el humano en modo
      * CONTRA_PC como para cualquiera de los dos jugadores en modo
      * DOS_HUMANOS. Si la jugada es valida y no termina el juego, pasa el
-     * turno a la otra ficha y, en modo CONTRA_PC, le pide de inmediato su
-     * jugada a la PC: al retornar de este metodo, el tablero ya refleja
-     * ambas jugadas si correspondia.
+     * turno a la otra ficha y notifica ese cambio: si el nuevo turno le
+     * corresponde a la PC, es responsabilidad de quien escuche
+     * onCambioDeTurno() invocar realizarJugadaPC().
      *
      * <p>Clics fuera de turno o sobre una casilla ya ocupada se ignoran
      * silenciosamente, en vez de lanzar una excepcion, porque son un
@@ -86,12 +82,7 @@ public class ControladorJuego {
         }
 
         fichaEnTurno = otraFicha(fichaQueJugo);
-
-        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno == fichaPC) {
-            realizarJugadaPC();
-        } else {
-            notificarCambioDeTurno();
-        }
+        notificarCambioDeTurno();
     }
 
     public int[] obtenerSugerenciaParaTurnoActual() {
@@ -115,8 +106,12 @@ public class ControladorJuego {
      * misma instancia de Tablero que este controlador (ver MainActivity),
      * asi que siempre analiza el estado mas reciente sin necesidad de
      * sincronizarlo manualmente.
+     *
+     * <p>Publico porque ya no se autoinvoca: quien reciba
+     * onCambioDeTurno() con fichaPC es quien decide cuando llamarlo (por
+     * ejemplo, tras una demora para simular que la PC "piensa").</p>
      */
-    private void realizarJugadaPC() {
+    public void realizarJugadaPC() {
         int[] jugada = algoritmo.obtenerMejorJugada();
         if (jugada[0] == -1) {
             return; // Sin casillas disponibles; no deberia ocurrir si el juego sigue activo.
