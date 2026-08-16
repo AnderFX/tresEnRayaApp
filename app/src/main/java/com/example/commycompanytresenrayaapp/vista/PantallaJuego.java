@@ -59,7 +59,24 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
     }
 
     public void onBotonClic(int fila, int columna) {
-        controlador.jugarTurnoHumano(fila, columna);
+        controlador.jugarTurno(fila, columna);
+    }
+
+    public void resaltarSugerencia(int fila, int columna) {
+        limpiarResaltado();
+        botones[fila][columna].setBackgroundColor(
+                getContext().getColor(R.color.sugerencia_resaltado));
+        filaResaltada = fila;
+        columnaResaltada = columna;
+    }
+
+    private void limpiarResaltado() {
+        if (filaResaltada != -1) {
+            botones[filaResaltada][columnaResaltada].setBackground(
+                    fondosOriginales[filaResaltada][columnaResaltada]);
+        }
+        filaResaltada = -1;
+        columnaResaltada = -1;
     }
 
     public void resaltarSugerencia(int fila, int columna) {
@@ -92,6 +109,10 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
                 .setMessage(mensaje)
                 .setPositiveButton("Aceptar", null)
                 .show();
+    }
+
+    @Override
+    public void onCambioDeTurno(Ficha fichaEnTurno) {
     }
 
     private int dpToPx(int dp) {

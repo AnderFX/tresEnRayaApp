@@ -12,6 +12,8 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
+import com.example.commycompanytresenrayaapp.controlador.ModoJuego;
+import com.example.commycompanytresenrayaapp.controlador.ObservadorJuego;
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
@@ -22,13 +24,13 @@ import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
  * MainActivity es solo el "ensamblador": crea el Modelo (Tablero,
  * Minimax, ControladorJuego), instancia la Vista (PantallaJuego, que
  * implementa ObservadorJuego y construye su propia UI por codigo) y la
- * incrusta en la pantalla. MainActivity no conoce Fichas puestas ni
- * turnos directamente; toda esa logica vive en ControladorJuego y se
- * refleja a traves de PantallaJuego.
+ * incrusta en la pantalla. MainActivity tambien se registra como
+ * ObservadorJuego, solo para reflejar el turno actual en pantalla.
  */
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private ControladorJuego controlador;
+    private TextView indicadorTurno;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,10 +46,34 @@ public class MainActivity extends AppCompatActivity {
         int padding = dpToPx(24);
         config.setPadding(padding, padding, padding, padding);
 
+        // --- GRUPO 0: MODO ---
+        TextView tituloModo = new TextView(this);
+        tituloModo.setText("¿Cómo quieres jugar?");
+        config.addView(tituloModo);
+
+        RadioGroup grupoModo = new RadioGroup(this);
+
+        RadioButton opcionContraPC = new RadioButton(this);
+        opcionContraPC.setId(View.generateViewId());
+        opcionContraPC.setText("Contra la computadora");
+        opcionContraPC.setChecked(true);
+
+        RadioButton opcionDosHumanos = new RadioButton(this);
+        opcionDosHumanos.setId(View.generateViewId());
+        opcionDosHumanos.setText("Dos jugadores humanos");
+
+        grupoModo.addView(opcionContraPC);
+        grupoModo.addView(opcionDosHumanos);
+        config.addView(grupoModo);
+
         // --- GRUPO 1: SÍMBOLO ---
+        LinearLayout seccionSimbolo = new LinearLayout(this);
+        seccionSimbolo.setOrientation(LinearLayout.VERTICAL);
+        seccionSimbolo.setGravity(Gravity.CENTER);
+
         TextView tituloSimbolo = new TextView(this);
         tituloSimbolo.setText("¿Con qué símbolo quieres jugar?");
-        config.addView(tituloSimbolo);
+        seccionSimbolo.addView(tituloSimbolo);
 
         RadioGroup grupoSimbolo = new RadioGroup(this);
 
@@ -62,12 +88,17 @@ public class MainActivity extends AppCompatActivity {
 
         grupoSimbolo.addView(opcionX);
         grupoSimbolo.addView(opcionO);
-        config.addView(grupoSimbolo);
+        seccionSimbolo.addView(grupoSimbolo);
+        config.addView(seccionSimbolo);
 
         // --- GRUPO 2: TURNO ---
+        LinearLayout seccionTurno = new LinearLayout(this);
+        seccionTurno.setOrientation(LinearLayout.VERTICAL);
+        seccionTurno.setGravity(Gravity.CENTER);
+
         TextView tituloTurno = new TextView(this);
         tituloTurno.setText("¿Quién empieza la partida?");
-        config.addView(tituloTurno);
+        seccionTurno.addView(tituloTurno);
 
         RadioGroup grupoTurno = new RadioGroup(this);
 
@@ -82,34 +113,61 @@ public class MainActivity extends AppCompatActivity {
 
         grupoTurno.addView(opcionHumano);
         grupoTurno.addView(opcionPC);
-        config.addView(grupoTurno);
+        seccionTurno.addView(grupoTurno);
+        config.addView(seccionTurno);
+
+        grupoModo.setOnCheckedChangeListener((group, checkedId) -> {
+            boolean esDosHumanos = checkedId == opcionDosHumanos.getId();
+            seccionSimbolo.setVisibility(esDosHumanos ? View.GONE : View.VISIBLE);
+            seccionTurno.setVisibility(esDosHumanos ? View.GONE : View.VISIBLE);
+        });
 
         // --- BOTÓN COMENZAR ---
         Button botonComenzar = new Button(this);
         botonComenzar.setText("Comenzar Juego");
         botonComenzar.setOnClickListener(v -> {
+            if (opcionDosHumanos.isChecked()) {
+                iniciarPartidaDosHumanos();
+                return;
+            }
             Ficha fichaHumano = opcionX.isChecked() ? Ficha.X : Ficha.O;
             boolean humanoEmpieza = opcionHumano.isChecked();
-            iniciarPartida(fichaHumano, humanoEmpieza);
+            iniciarPartidaContraPC(fichaHumano, humanoEmpieza);
         });
         config.addView(botonComenzar);
 
         setContentView(config);
     }
 
-    // iniciarPartida ahora recibe parámetros en vez de usar las constantes fijas
-    private void iniciarPartida(Ficha fichaHumano, boolean humanoEmpieza) {
+    private void iniciarPartidaContraPC(Ficha fichaHumano, boolean humanoEmpieza) {
         Ficha fichaPC = (fichaHumano == Ficha.X) ? Ficha.O : Ficha.X;
 
         Tablero tablero = new Tablero();
         Minimax algoritmo = new Minimax(tablero, fichaPC, fichaHumano);
 
         controlador = new ControladorJuego(tablero, algoritmo);
+        controlador.setModoJuego(ModoJuego.CONTRA_PC);
         controlador.setFichaHumano(fichaHumano);
         controlador.setFichaPC(fichaPC);
-        controlador.setTurnoHumano(humanoEmpieza);
+        controlador.setFichaEnTurno(humanoEmpieza ? fichaHumano : fichaPC);
 
+        montarPantallaDeJuego();
+    }
+
+    private void iniciarPartidaDosHumanos() {
+        Tablero tablero = new Tablero();
+        Minimax algoritmo = new Minimax(tablero, Ficha.O, Ficha.X);
+
+        controlador = new ControladorJuego(tablero, algoritmo);
+        controlador.setModoJuego(ModoJuego.DOS_HUMANOS);
+        controlador.setFichaEnTurno(Ficha.X);
+
+        montarPantallaDeJuego();
+    }
+
+    private void montarPantallaDeJuego() {
         PantallaJuego pantalla = new PantallaJuego(this, controlador);
+        controlador.agregarObservador(this);
         setContentView(construirContenedor(pantalla));
         controlador.iniciarJuego();
     }
@@ -120,6 +178,11 @@ public class MainActivity extends AppCompatActivity {
         contenedor.setGravity(Gravity.CENTER);
         int padding = dpToPx(24);
         contenedor.setPadding(padding, padding, padding, padding);
+
+        indicadorTurno = new TextView(this);
+        indicadorTurno.setTextSize(18);
+        contenedor.addView(indicadorTurno);
+
         contenedor.addView(pantalla);
         contenedor.addView(construirBotonSugerencia(pantalla));
         contenedor.addView(construirBotonReiniciar());
@@ -137,7 +200,7 @@ public class MainActivity extends AppCompatActivity {
         botonSugerencia.setLayoutParams(params);
 
         botonSugerencia.setOnClickListener(v -> {
-            int[] sugerencia = controlador.obtenerSugerenciaParaHumano();
+            int[] sugerencia = controlador.obtenerSugerenciaParaTurnoActual();
             if (sugerencia == null) {
                 Toast.makeText(this, "No hay sugerencia disponible ahora.", Toast.LENGTH_SHORT).show();
                 return;
@@ -159,6 +222,20 @@ public class MainActivity extends AppCompatActivity {
 
         botonReiniciar.setOnClickListener(v -> recreate());
         return botonReiniciar;
+    }
+
+    @Override
+    public void onJugadaRealizada(int fila, int columna, Ficha ficha) {
+    }
+
+    @Override
+    public void onJuegoTerminado(String mensaje) {
+        indicadorTurno.setText("Juego terminado.");
+    }
+
+    @Override
+    public void onCambioDeTurno(Ficha fichaEnTurno) {
+        indicadorTurno.setText("Turno de: " + fichaEnTurno.name());
     }
 
     private int dpToPx(int dp) {

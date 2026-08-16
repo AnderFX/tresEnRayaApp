@@ -60,19 +60,28 @@ classDiagram
         - Minimax algoritmo
         - Ficha fichaHumano
         - Ficha fichaPC
-        - boolean turnoHumano
+        - ModoJuego modoJuego
+        - Ficha fichaEnTurno
         - List~ObservadorJuego~ observadores
         + ControladorJuego(Tablero tablero, Minimax algoritmo)
         + iniciarJuego() void
         + agregarObservador(ObservadorJuego obs) void
-        + jugarTurnoHumano(int fila, int columna) void
+        + jugarTurno(int fila, int columna) void
+        + obtenerSugerenciaParaTurnoActual() int[]
         - notificarJugada(int fila, int columna, Ficha ficha) void
         - notificarFinDeJuego(String mensaje) void
+        - notificarCambioDeTurno() void
+    }
+    class ModoJuego {
+        <<enumeration>>
+        CONTRA_PC
+        DOS_HUMANOS
     }
     class ObservadorJuego {
         <<interface>>
         + onJugadaRealizada(int fila, int columna, Ficha ficha) void
         + onJuegoTerminado(String mensaje) void
+        + onCambioDeTurno(Ficha fichaEnTurno) void
     }
     class PantallaJuego {
         - ControladorJuego controlador
@@ -88,8 +97,10 @@ classDiagram
     }
 
     PantallaJuego ..|> ObservadorJuego : Implementa
+    MainActivity ..|> ObservadorJuego : Implementa
     PantallaJuego --> ControladorJuego : Delega eventos
     ControladorJuego o-- ObservadorJuego : Notifica
+    ControladorJuego --> ModoJuego : Usa
     ControladorJuego --> Tablero : Manipula
     ControladorJuego --> Minimax : Delega IA
     ArbolNario o-- NodoJugada : Contiene

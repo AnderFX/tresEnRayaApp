@@ -17,7 +17,8 @@ public class ControladorJuego {
     private Minimax algoritmo;
     private Ficha fichaHumano;
     private Ficha fichaPC;
-    private boolean turnoHumano;
+    private ModoJuego modoJuego = ModoJuego.CONTRA_PC;
+    private Ficha fichaEnTurno;
     private List<ObservadorJuego> observadores;
     private boolean juegoTerminado;
 
@@ -30,18 +31,20 @@ public class ControladorJuego {
 
     /**
      * Arranca la partida. Si el primer turno le corresponde a la PC
-     * (turnoHumano == false), le pide de inmediato su jugada a Minimax.
-     * Si el turno inicial es del humano, no hace nada más: el controlador
-     * queda a la espera de que la vista invoque jugarTurnoHumano() cuando
-     * el usuario toque una casilla.
+     * (modoJuego == CONTRA_PC y fichaEnTurno == fichaPC), le pide de
+     * inmediato su jugada a Minimax. En cualquier otro caso, notifica el
+     * turno inicial y el controlador queda a la espera de que la vista
+     * invoque jugarTurno() cuando el usuario toque una casilla.
      *
-     * <p>fichaHumano, fichaPC y turnoHumano deben configurarse (via sus
-     * setters) antes de llamar a este metodo.</p>
+     * <p>fichaHumano, fichaPC, modoJuego y fichaEnTurno deben configurarse
+     * (via sus setters) antes de llamar a este metodo.</p>
      */
     public void iniciarJuego() {
         juegoTerminado = false;
-        if (!turnoHumano) {
+        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno == fichaPC) {
             realizarJugadaPC();
+        } else {
+            notificarCambioDeTurno();
         }
     }
 
@@ -50,34 +53,60 @@ public class ControladorJuego {
     }
 
     /**
-     * Procesa el turno del humano sobre la casilla (fila, columna). Si la
-     * jugada es valida y no termina el juego, cede el turno a la PC y le
-     * pide su jugada a Minimax de inmediato: al retornar de este metodo,
-     * el tablero ya refleja tanto la jugada del humano como, si
-     * corresponde, la respuesta de la computadora.
+     * Procesa el turno de quien tenga la ficha actual (fichaEnTurno) sobre
+     * la casilla (fila, columna): sirve tanto para el humano en modo
+     * CONTRA_PC como para cualquiera de los dos jugadores en modo
+     * DOS_HUMANOS. Si la jugada es valida y no termina el juego, pasa el
+     * turno a la otra ficha y, en modo CONTRA_PC, le pide de inmediato su
+     * jugada a la PC: al retornar de este metodo, el tablero ya refleja
+     * ambas jugadas si correspondia.
      *
      * <p>Clics fuera de turno o sobre una casilla ya ocupada se ignoran
      * silenciosamente, en vez de lanzar una excepcion, porque son un
      * evento de UI esperado (el usuario puede tocar el tablero en
      * cualquier momento) y no un error de programacion.</p>
      */
-    public void jugarTurnoHumano(int fila, int columna) {
-        if (juegoTerminado || !turnoHumano) {
+    public void jugarTurno(int fila, int columna) {
+        if (juegoTerminado) {
+            return;
+        }
+        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno != fichaHumano) {
             return;
         }
         if (tablero.getCasilla(fila, columna) != Ficha.VACIA) {
             return;
         }
 
-        tablero.llenarCasilla(fila, columna, fichaHumano);
-        notificarJugada(fila, columna, fichaHumano);
+        Ficha fichaQueJugo = fichaEnTurno;
+        tablero.llenarCasilla(fila, columna, fichaQueJugo);
+        notificarJugada(fila, columna, fichaQueJugo);
 
-        if (verificarYNotificarFinDeJuego(fichaHumano)) {
+        if (verificarYNotificarFinDeJuego(fichaQueJugo)) {
             return;
         }
 
-        turnoHumano = false;
-        realizarJugadaPC();
+        fichaEnTurno = otraFicha(fichaQueJugo);
+
+        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno == fichaPC) {
+            realizarJugadaPC();
+        } else {
+            notificarCambioDeTurno();
+        }
+    }
+
+    public int[] obtenerSugerenciaParaTurnoActual() {
+        if (juegoTerminado) {
+            return null;
+        }
+        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno != fichaHumano) {
+            return null;
+        }
+
+        int[] sugerencia = algoritmo.obtenerMejorJugadaPara(fichaEnTurno);
+        if (sugerencia[0] == -1) {
+            return null;
+        }
+        return sugerencia;
     }
 
     public int[] obtenerSugerenciaParaHumano() {
@@ -112,7 +141,8 @@ public class ControladorJuego {
             return;
         }
 
-        turnoHumano = true;
+        fichaEnTurno = fichaHumano;
+        notificarCambioDeTurno();
     }
 
     /**
@@ -125,10 +155,7 @@ public class ControladorJuego {
     private boolean verificarYNotificarFinDeJuego(Ficha ultimaFicha) {
         if (tablero.verificarGanador(ultimaFicha)) {
             juegoTerminado = true;
-            String mensaje = (ultimaFicha == fichaHumano)
-                    ? "¡Ganaste! Felicidades."
-                    : "La computadora ha ganado esta partida.";
-            notificarFinDeJuego(mensaje);
+            notificarFinDeJuego(mensajeDeVictoria(ultimaFicha));
             return true;
         }
         if (tablero.obtenerCasillasDisponibles().isEmpty()) {
@@ -137,6 +164,19 @@ public class ControladorJuego {
             return true;
         }
         return false;
+    }
+
+    private String mensajeDeVictoria(Ficha ganador) {
+        if (modoJuego == ModoJuego.DOS_HUMANOS) {
+            return "¡Gano el jugador con ficha " + ganador.name() + "!";
+        }
+        return (ganador == fichaHumano)
+                ? "¡Ganaste! Felicidades."
+                : "La computadora ha ganado esta partida.";
+    }
+
+    private Ficha otraFicha(Ficha ficha) {
+        return (ficha == Ficha.X) ? Ficha.O : Ficha.X;
     }
 
     private void notificarJugada(int fila, int columna, Ficha ficha) {
@@ -148,6 +188,12 @@ public class ControladorJuego {
     private void notificarFinDeJuego(String mensaje) {
         for (ObservadorJuego obs : observadores) {
             obs.onJuegoTerminado(mensaje);
+        }
+    }
+
+    private void notificarCambioDeTurno() {
+        for (ObservadorJuego obs : observadores) {
+            obs.onCambioDeTurno(fichaEnTurno);
         }
     }
 
@@ -185,12 +231,20 @@ public class ControladorJuego {
         this.fichaPC = fichaPC;
     }
 
-    public boolean isTurnoHumano() {
-        return turnoHumano;
+    public ModoJuego getModoJuego() {
+        return modoJuego;
     }
 
-    public void setTurnoHumano(boolean turnoHumano) {
-        this.turnoHumano = turnoHumano;
+    public void setModoJuego(ModoJuego modoJuego) {
+        this.modoJuego = modoJuego;
+    }
+
+    public Ficha getFichaEnTurno() {
+        return fichaEnTurno;
+    }
+
+    public void setFichaEnTurno(Ficha fichaEnTurno) {
+        this.fichaEnTurno = fichaEnTurno;
     }
 
     public boolean isJuegoTerminado() {
