@@ -79,23 +79,6 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
         columnaResaltada = -1;
     }
 
-    public void resaltarSugerencia(int fila, int columna) {
-        limpiarResaltado();
-        botones[fila][columna].setBackgroundColor(
-                getContext().getColor(R.color.sugerencia_resaltado));
-        filaResaltada = fila;
-        columnaResaltada = columna;
-    }
-
-    private void limpiarResaltado() {
-        if (filaResaltada != -1) {
-            botones[filaResaltada][columnaResaltada].setBackground(
-                    fondosOriginales[filaResaltada][columnaResaltada]);
-        }
-        filaResaltada = -1;
-        columnaResaltada = -1;
-    }
-
     @Override
     public void onJugadaRealizada(int fila, int columna, Ficha ficha) {
         limpiarResaltado();
