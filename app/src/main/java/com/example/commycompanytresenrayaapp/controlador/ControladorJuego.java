@@ -31,7 +31,7 @@ public class ControladorJuego {
     private final List<ObservadorJuego> observadores;
     private final Handler handler;
 
-    public ControladorJuego(Tablero tablero, Minimax algoritmo) {
+    public ControladorJuego(Tablero tablero, Minimax algoritmo, Jugador jugadorX, Jugador jugadorO) {
         this.tablero = tablero;
         this.algoritmo = algoritmo;
         this.jugadorX = jugadorX;
