@@ -208,14 +208,21 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         indicadorTurno = new TextView(this);
         indicadorTurno.setTextSize(18);
-        contenedor.addView(indicadorTurno);
+        contenedor.addView(indicadorTurno, paramsCentrados());
 
-        contenedor.addView(pantalla);
+        contenedor.addView(pantalla, paramsCentrados());
         if (controlador.getModoJuego() != ModoJuego.PC_VS_PC) {
             contenedor.addView(construirBotonSugerencia(pantalla));
         }
         contenedor.addView(construirBotonReiniciar());
         return contenedor;
+    }
+
+    private LinearLayout.LayoutParams paramsCentrados() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_HORIZONTAL;
+        return params;
     }
 
     private Button construirBotonSugerencia(PantallaJuego pantalla) {
