@@ -52,7 +52,6 @@ classDiagram
         + generarArbolDeJuego(ArbolNario arbol, int profundidad) void
         + generarArbolDeJuegoPara(ArbolNario arbol, int profundidad, Ficha fichaQueDecide) void
         + minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoDeQuienDecide, Ficha fichaQueDecide) int
-        + obtenerMejorJugada() int[]
         + obtenerMejorJugadaPara(Ficha fichaQueDecide) int[]
     }
     class ControladorJuego {
@@ -68,7 +67,7 @@ classDiagram
         + agregarObservador(ObservadorJuego obs) void
         + jugarTurno(int fila, int columna) void
         + obtenerSugerenciaParaTurnoActual() int[]
-        + realizarJugadaPC() void
+        + realizarJugadaAutomatica() void
         - notificarJugada(int fila, int columna, Ficha ficha) void
         - notificarFinDeJuego(String mensaje) void
         - notificarCambioDeTurno() void
@@ -77,6 +76,7 @@ classDiagram
         <<enumeration>>
         CONTRA_PC
         DOS_HUMANOS
+        PC_VS_PC
     }
     class ObservadorJuego {
         <<interface>>

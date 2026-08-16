@@ -32,6 +32,7 @@ import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
 public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private static final long DEMORA_JUGADA_PC_MS = 500;
+    private static final long DEMORA_PC_VS_PC_MS = 1000;
 
     private ControladorJuego controlador;
     private PantallaJuego pantalla;
@@ -68,8 +69,13 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         opcionDosHumanos.setId(View.generateViewId());
         opcionDosHumanos.setText("Dos jugadores humanos");
 
+        RadioButton opcionPcVsPc = new RadioButton(this);
+        opcionPcVsPc.setId(View.generateViewId());
+        opcionPcVsPc.setText("Computadora vs. computadora");
+
         grupoModo.addView(opcionContraPC);
         grupoModo.addView(opcionDosHumanos);
+        grupoModo.addView(opcionPcVsPc);
         config.addView(grupoModo);
 
         // --- GRUPO 1: SÍMBOLO ---
@@ -123,15 +129,19 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         config.addView(seccionTurno);
 
         grupoModo.setOnCheckedChangeListener((group, checkedId) -> {
-            boolean esDosHumanos = checkedId == opcionDosHumanos.getId();
-            seccionSimbolo.setVisibility(esDosHumanos ? View.GONE : View.VISIBLE);
-            seccionTurno.setVisibility(esDosHumanos ? View.GONE : View.VISIBLE);
+            boolean esContraPC = checkedId == opcionContraPC.getId();
+            seccionSimbolo.setVisibility(esContraPC ? View.VISIBLE : View.GONE);
+            seccionTurno.setVisibility(esContraPC ? View.VISIBLE : View.GONE);
         });
 
         // --- BOTÓN COMENZAR ---
         Button botonComenzar = new Button(this);
         botonComenzar.setText("Comenzar Juego");
         botonComenzar.setOnClickListener(v -> {
+            if (opcionPcVsPc.isChecked()) {
+                iniciarPartidaPcVsPc();
+                return;
+            }
             if (opcionDosHumanos.isChecked()) {
                 iniciarPartidaDosHumanos();
                 return;
@@ -171,6 +181,17 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         montarPantallaDeJuego();
     }
 
+    private void iniciarPartidaPcVsPc() {
+        Tablero tablero = new Tablero();
+        Minimax algoritmo = new Minimax(tablero, Ficha.O, Ficha.X);
+
+        controlador = new ControladorJuego(tablero, algoritmo);
+        controlador.setModoJuego(ModoJuego.PC_VS_PC);
+        controlador.setFichaEnTurno(Ficha.X);
+
+        montarPantallaDeJuego();
+    }
+
     private void montarPantallaDeJuego() {
         pantalla = new PantallaJuego(this, controlador);
         controlador.agregarObservador(this);
@@ -190,7 +211,9 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         contenedor.addView(indicadorTurno);
 
         contenedor.addView(pantalla);
-        contenedor.addView(construirBotonSugerencia(pantalla));
+        if (controlador.getModoJuego() != ModoJuego.PC_VS_PC) {
+            contenedor.addView(construirBotonSugerencia(pantalla));
+        }
         contenedor.addView(construirBotonReiniciar());
         return contenedor;
     }
@@ -242,14 +265,33 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     @Override
     public void onCambioDeTurno(Ficha fichaEnTurno) {
-        if (controlador.getModoJuego() == ModoJuego.CONTRA_PC && fichaEnTurno == controlador.getFichaPC()) {
-            indicadorTurno.setText("La computadora está pensando...");
+        if (requiereJugadaAutomatica(fichaEnTurno)) {
+            indicadorTurno.setText(textoPensando(fichaEnTurno));
             pantalla.setInteractivo(false);
-            handler.postDelayed(controlador::realizarJugadaPC, DEMORA_JUGADA_PC_MS);
+            long demora = controlador.getModoJuego() == ModoJuego.PC_VS_PC
+                    ? DEMORA_PC_VS_PC_MS
+                    : DEMORA_JUGADA_PC_MS;
+            handler.postDelayed(controlador::realizarJugadaAutomatica, demora);
             return;
         }
         pantalla.setInteractivo(true);
         indicadorTurno.setText("Turno de: " + fichaEnTurno.name());
+    }
+
+    private boolean requiereJugadaAutomatica(Ficha fichaEnTurno) {
+        ModoJuego modo = controlador.getModoJuego();
+        if (modo == ModoJuego.PC_VS_PC) {
+            return true;
+        }
+        return modo == ModoJuego.CONTRA_PC && fichaEnTurno == controlador.getFichaPC();
+    }
+
+    private String textoPensando(Ficha fichaEnTurno) {
+        if (controlador.getModoJuego() == ModoJuego.PC_VS_PC) {
+            String bot = (fichaEnTurno == Ficha.X) ? "Bot 1" : "Bot 2";
+            return bot + " está pensando...";
+        }
+        return "La computadora está pensando...";
     }
 
     @Override
