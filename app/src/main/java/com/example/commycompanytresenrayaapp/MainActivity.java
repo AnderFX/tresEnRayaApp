@@ -8,6 +8,7 @@ import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
@@ -120,8 +121,30 @@ public class MainActivity extends AppCompatActivity {
         int padding = dpToPx(24);
         contenedor.setPadding(padding, padding, padding, padding);
         contenedor.addView(pantalla);
+        contenedor.addView(construirBotonSugerencia(pantalla));
         contenedor.addView(construirBotonReiniciar());
         return contenedor;
+    }
+
+    private Button construirBotonSugerencia(PantallaJuego pantalla) {
+        Button botonSugerencia = new Button(this);
+        botonSugerencia.setText("Sugerencia");
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dpToPx(16);
+        botonSugerencia.setLayoutParams(params);
+
+        botonSugerencia.setOnClickListener(v -> {
+            int[] sugerencia = controlador.obtenerSugerenciaParaHumano();
+            if (sugerencia == null) {
+                Toast.makeText(this, "No hay sugerencia disponible ahora.", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            pantalla.resaltarSugerencia(sugerencia[0], sugerencia[1]);
+        });
+        return botonSugerencia;
     }
 
     private Button construirBotonReiniciar() {
