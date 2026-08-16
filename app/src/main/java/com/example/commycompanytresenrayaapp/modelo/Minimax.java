@@ -22,10 +22,14 @@ public class Minimax {
     }
 
     public void generarArbolDeJuego(ArbolNario arbol, int profundidad) {
+        generarArbolDeJuegoPara(arbol, profundidad, fichaPC);
+    }
+
+    public void generarArbolDeJuegoPara(ArbolNario arbol, int profundidad, Ficha fichaQueDecide) {
         NodoJugada raiz = new NodoJugada(tableroActual.clonar(), -1, -1);
         arbol.setRaiz(raiz);
-        generarHijos(raiz, profundidad, fichaPC);
-   } 
+        generarHijos(raiz, profundidad, fichaQueDecide);
+    }
 
     private void generarHijos(NodoJugada nodoPadre, int profundidad, Ficha fichaTurno) {
         if (profundidad <= 0) {
@@ -57,7 +61,7 @@ public class Minimax {
         }
     }
 
-    public int minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoPC) {
+    public int minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoDeQuienDecide, Ficha fichaQueDecide) {
         Tablero tableroNodo = nodoActual.getEstado();
 
         boolean esEstadoTerminal = nodoActual.esHoja()
@@ -66,16 +70,16 @@ public class Minimax {
                 || tableroNodo.verificarGanador(Ficha.O);
 
         if (esEstadoTerminal) {
-            int utilidad = calcularUtilidad(tableroNodo);
+            int utilidad = calcularUtilidad(tableroNodo, fichaQueDecide);
             nodoActual.setUtilidad(utilidad);
             return utilidad;
         }
 
-        int mejorUtilidad = esTurnoPC ? Integer.MIN_VALUE : Integer.MAX_VALUE;
+        int mejorUtilidad = esTurnoDeQuienDecide ? Integer.MIN_VALUE : Integer.MAX_VALUE;
 
         for (NodoJugada hijo : nodoActual.getHijos()) {
-            int utilidadHijo = minimax(hijo, profundidad - 1, !esTurnoPC);
-            if (esTurnoPC) {
+            int utilidadHijo = minimax(hijo, profundidad - 1, !esTurnoDeQuienDecide, fichaQueDecide);
+            if (esTurnoDeQuienDecide) {
                 mejorUtilidad = Math.max(mejorUtilidad, utilidadHijo);
             } else {
                 mejorUtilidad = Math.min(mejorUtilidad, utilidadHijo);
@@ -87,11 +91,15 @@ public class Minimax {
     }
 
     public int[] obtenerMejorJugada() {
+        return obtenerMejorJugadaPara(fichaPC);
+    }
+
+    public int[] obtenerMejorJugadaPara(Ficha fichaQueDecide) {
         ArbolNario arbol = new ArbolNario();
-        generarArbolDeJuego(arbol, PROFUNDIDAD_ANALISIS);
+        generarArbolDeJuegoPara(arbol, PROFUNDIDAD_ANALISIS, fichaQueDecide);
 
         NodoJugada raiz = arbol.getRaiz();
-        minimax(raiz, PROFUNDIDAD_ANALISIS, true);
+        minimax(raiz, PROFUNDIDAD_ANALISIS, true, fichaQueDecide);
 
         NodoJugada mejorJugada = null;
         int mejorUtilidad = Integer.MIN_VALUE;
@@ -110,9 +118,10 @@ public class Minimax {
         return new int[]{mejorJugada.getFilaJugada(), mejorJugada.getColumnaJugada()};
     }
 
-    private int calcularUtilidad(Tablero tablero) {
-        return tablero.contarLineasDisponibles(fichaPC) - tablero.contarLineasDisponibles(fichaHumano);
-    }   
+    private int calcularUtilidad(Tablero tablero, Ficha fichaQueDecide) {
+        Ficha oponente = (fichaQueDecide == fichaPC) ? fichaHumano : fichaPC;
+        return tablero.contarLineasDisponibles(fichaQueDecide) - tablero.contarLineasDisponibles(oponente);
+    }
 
     // Getters y Setters 
     public Tablero getTableroActual() {

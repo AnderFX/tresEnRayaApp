@@ -80,6 +80,18 @@ public class ControladorJuego {
         realizarJugadaPC();
     }
 
+    public int[] obtenerSugerenciaParaHumano() {
+        if (juegoTerminado || !turnoHumano) {
+            return null;
+        }
+
+        int[] sugerencia = algoritmo.obtenerMejorJugadaPara(fichaHumano);
+        if (sugerencia[0] == -1) {
+            return null;
+        }
+        return sugerencia;
+    }
+
     /**
      * Le pide a Minimax la mejor jugada para la PC sobre el tablero
      * actual, la aplica y notifica el resultado. Minimax comparte la

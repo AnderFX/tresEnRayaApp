@@ -50,8 +50,10 @@ classDiagram
     class Minimax {
         - Tablero tableroActual
         + generarArbolDeJuego(ArbolNario arbol, int profundidad) void
-        + minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoPC) int
+        + generarArbolDeJuegoPara(ArbolNario arbol, int profundidad, Ficha fichaQueDecide) void
+        + minimax(NodoJugada nodoActual, int profundidad, boolean esTurnoDeQuienDecide, Ficha fichaQueDecide) int
         + obtenerMejorJugada() int[]
+        + obtenerMejorJugadaPara(Ficha fichaQueDecide) int[]
     }
     class ControladorJuego {
         - Tablero tablero

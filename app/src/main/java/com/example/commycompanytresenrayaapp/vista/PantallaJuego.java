@@ -2,9 +2,11 @@ package com.example.commycompanytresenrayaapp.vista;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.graphics.drawable.Drawable;
 import android.widget.Button;
 import android.widget.GridLayout;
 
+import com.example.commycompanytresenrayaapp.R;
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
 import com.example.commycompanytresenrayaapp.controlador.ObservadorJuego;
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
@@ -13,11 +15,15 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
 
     private ControladorJuego controlador;
     private Button[][] botones;
+    private Drawable[][] fondosOriginales;
+    private int filaResaltada = -1;
+    private int columnaResaltada = -1;
 
     public PantallaJuego(Context context, ControladorJuego controlador) {
         super(context);
         this.controlador = controlador;
         this.botones = new Button[3][3];
+        this.fondosOriginales = new Drawable[3][3];
         this.controlador.agregarObservador(this);
         inicializarUI();
     }
@@ -32,6 +38,7 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
                 Button boton = new Button(getContext());
                 boton.setText("");
                 boton.setTextSize(24);
+                fondosOriginales[fila][columna] = boton.getBackground();
 
                 GridLayout.LayoutParams params = new GridLayout.LayoutParams(
                         GridLayout.spec(fila),
@@ -55,8 +62,26 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
         controlador.jugarTurnoHumano(fila, columna);
     }
 
+    public void resaltarSugerencia(int fila, int columna) {
+        limpiarResaltado();
+        botones[fila][columna].setBackgroundColor(
+                getContext().getColor(R.color.sugerencia_resaltado));
+        filaResaltada = fila;
+        columnaResaltada = columna;
+    }
+
+    private void limpiarResaltado() {
+        if (filaResaltada != -1) {
+            botones[filaResaltada][columnaResaltada].setBackground(
+                    fondosOriginales[filaResaltada][columnaResaltada]);
+        }
+        filaResaltada = -1;
+        columnaResaltada = -1;
+    }
+
     @Override
     public void onJugadaRealizada(int fila, int columna, Ficha ficha) {
+        limpiarResaltado();
         botones[fila][columna].setText(ficha == Ficha.VACIA ? "" : ficha.name());
     }
 
