@@ -68,6 +68,7 @@ classDiagram
         + agregarObservador(ObservadorJuego obs) void
         + jugarTurno(int fila, int columna) void
         + obtenerSugerenciaParaTurnoActual() int[]
+        + realizarJugadaPC() void
         - notificarJugada(int fila, int columna, Ficha ficha) void
         - notificarFinDeJuego(String mensaje) void
         - notificarCambioDeTurno() void
@@ -88,6 +89,7 @@ classDiagram
         - Button[][] botones
         + inicializarUI() void
         + onBotonClic(int fila, int columna) void
+        + setInteractivo(boolean interactivo) void
         + onJugadaRealizada(int fila, int columna, Ficha ficha) void
         + onJuegoTerminado(String mensaje) void
     }

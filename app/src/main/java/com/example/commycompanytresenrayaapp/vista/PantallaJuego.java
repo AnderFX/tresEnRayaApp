@@ -82,7 +82,26 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
     @Override
     public void onJugadaRealizada(int fila, int columna, Ficha ficha) {
         limpiarResaltado();
-        botones[fila][columna].setText(ficha == Ficha.VACIA ? "" : ficha.name());
+        Button boton = botones[fila][columna];
+        boton.setText(ficha == Ficha.VACIA ? "" : ficha.name());
+        if (ficha != Ficha.VACIA) {
+            animarAparicionFicha(boton);
+        }
+    }
+
+    private void animarAparicionFicha(Button boton) {
+        boton.setScaleX(0.3f);
+        boton.setScaleY(0.3f);
+        boton.setAlpha(0f);
+        boton.animate().scaleX(1f).scaleY(1f).alpha(1f).setDuration(200).start();
+    }
+
+    public void setInteractivo(boolean interactivo) {
+        for (int fila = 0; fila < 3; fila++) {
+            for (int columna = 0; columna < 3; columna++) {
+                botones[fila][columna].setEnabled(interactivo);
+            }
+        }
     }
 
     @Override
