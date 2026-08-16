@@ -4,14 +4,22 @@
  */
 package com.example.commycompanytresenrayaapp.controlador;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
+import com.example.commycompanytresenrayaapp.modelo.Jugador;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
+import com.example.commycompanytresenrayaapp.modelo.TipoJugador;
 
 public class ControladorJuego {
+
+    private static final int RETARDO_MAQUINA_DEFECTO_MS = 600;
+
 
     private Tablero tablero;
     private Minimax algoritmo;
@@ -21,10 +29,15 @@ public class ControladorJuego {
     private Ficha fichaEnTurno;
     private List<ObservadorJuego> observadores;
     private boolean juegoTerminado;
+    private int retardoMaquinaMs;
+    private final List<ObservadorJuego> observadores;
+    private final Handler handler;
 
-    public ControladorJuego(Tablero tablero, Minimax algoritmo) {
+    public ControladorJuego(Tablero tablero, Minimax algoritmo, Jugador jugadorX, Jugador jugadorO) {
         this.tablero = tablero;
         this.algoritmo = algoritmo;
+        this.jugadorX = jugadorX;
+        this.jugadorO = jugadorO;
         this.observadores = new ArrayList<>();
         this.juegoTerminado = false;
     }
@@ -129,12 +142,23 @@ public class ControladorJuego {
     }
 
     /**
-     * Revisa si, tras colocar {@code ultimaFicha}, el juego termino (por
-     * victoria de esa ficha o por empate) y, de ser asi, notifica a los
-     * observadores con el mensaje correspondiente.
-     *
-     * @return true si el juego termino (victoria o empate)
+     * Coloca la ficha, notifica a la vista, revisa fin de juego y, si
+     * la partida sigue, cede el turno y dispara la jugada de la
+     * máquina si corresponde.
      */
+    private void aplicarJugada(int fila, int columna, Ficha ficha) {
+        tablero.llenarCasilla(fila, columna, ficha);
+        notificarJugada(fila, columna, ficha);
+
+        if (verificarYNotificarFinDeJuego(ficha)) {
+            return;
+        }
+
+        fichaTurnoActual = obtenerFichaContraria(fichaTurnoActual);
+        procesarTurnoSiEsMaquina();
+    }
+    
+
     private boolean verificarYNotificarFinDeJuego(Ficha ultimaFicha) {
         if (tablero.verificarGanador(ultimaFicha)) {
             juegoTerminado = true;
@@ -143,7 +167,7 @@ public class ControladorJuego {
         }
         if (tablero.obtenerCasillasDisponibles().isEmpty()) {
             juegoTerminado = true;
-            notificarFinDeJuego("Empate. Nadie logro completar una linea.");
+            notificarFinDeJuego("Empate. Nadie logró completar una línea.");
             return true;
         }
         return false;
@@ -198,20 +222,20 @@ public class ControladorJuego {
         this.algoritmo = algoritmo;
     }
 
-    public Ficha getFichaHumano() {
-        return fichaHumano;
+    public Jugador getJugadorX() {
+        return jugadorX;
     }
 
-    public void setFichaHumano(Ficha fichaHumano) {
-        this.fichaHumano = fichaHumano;
+    public void setJugadorX(Jugador jugadorX) {
+        this.jugadorX = jugadorX;
     }
 
-    public Ficha getFichaPC() {
-        return fichaPC;
+    public Jugador getJugadorO() {
+        return jugadorO;
     }
 
-    public void setFichaPC(Ficha fichaPC) {
-        this.fichaPC = fichaPC;
+    public void setJugadorO(Jugador jugadorO) {
+        this.jugadorO = jugadorO;
     }
 
     public ModoJuego getModoJuego() {
@@ -234,11 +258,15 @@ public class ControladorJuego {
         return juegoTerminado;
     }
 
-    public List<ObservadorJuego> getObservadores() {
-        return observadores;
+    public int getRetardoMaquinaMs() {
+        return retardoMaquinaMs;
     }
 
-    public void setObservadores(List<ObservadorJuego> observadores) {
-        this.observadores = observadores;
+    public void setRetardoMaquinaMs(int retardoMaquinaMs) {
+        this.retardoMaquinaMs = retardoMaquinaMs;
+    }
+
+    public List<ObservadorJuego> getObservadores() {
+        return observadores;
     }
 }
