@@ -59,7 +59,7 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
     }
 
     public void onBotonClic(int fila, int columna) {
-        controlador.jugarTurnoHumano(fila, columna);
+        controlador.jugarTurno(fila, columna);
     }
 
     public void resaltarSugerencia(int fila, int columna) {
@@ -92,6 +92,10 @@ public class PantallaJuego extends GridLayout implements ObservadorJuego {
                 .setMessage(mensaje)
                 .setPositiveButton("Aceptar", null)
                 .show();
+    }
+
+    @Override
+    public void onCambioDeTurno(Ficha fichaEnTurno) {
     }
 
     private int dpToPx(int dp) {

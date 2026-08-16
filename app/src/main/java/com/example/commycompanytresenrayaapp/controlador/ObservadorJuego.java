@@ -8,12 +8,15 @@ import com.example.commycompanytresenrayaapp.modelo.Ficha;
 
 /**
  * Contrato del patrón Observer usado para que ControladorJuego pueda avisar
- * a la vista (u otros interesados) cuando ocurre una jugada o el juego
- * termina, sin conocer detalles de cómo está construida esa vista.
+ * a la vista (u otros interesados) cuando ocurre una jugada, cambia el
+ * turno o el juego termina, sin conocer detalles de cómo está construida
+ * esa vista.
  */
 public interface ObservadorJuego {
 
     void onJugadaRealizada(int fila, int columna, Ficha ficha);
 
     void onJuegoTerminado(String mensaje);
+
+    void onCambioDeTurno(Ficha fichaEnTurno);
 }
