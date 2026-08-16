@@ -4,45 +4,42 @@
  */
 package com.example.commycompanytresenrayaapp.controlador;
 
+import android.os.Handler;
+import android.os.Looper;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
+import com.example.commycompanytresenrayaapp.modelo.Jugador;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
+import com.example.commycompanytresenrayaapp.modelo.TipoJugador;
 
 public class ControladorJuego {
 
+    private static final int RETARDO_MAQUINA_DEFECTO_MS = 600;
+
+
     private Tablero tablero;
     private Minimax algoritmo;
-    private Ficha fichaHumano;
-    private Ficha fichaPC;
-    private boolean turnoHumano;
-    private List<ObservadorJuego> observadores;
+    private Jugador jugadorX;
+    private Jugador jugadorO;
+    private Ficha fichaTurnoActual;
     private boolean juegoTerminado;
+    private int retardoMaquinaMs;
+    private final List<ObservadorJuego> observadores;
+    private final Handler handler;
 
     public ControladorJuego(Tablero tablero, Minimax algoritmo) {
         this.tablero = tablero;
         this.algoritmo = algoritmo;
+        this.jugadorX = jugadorX;
+        this.jugadorO = jugadorO;
         this.observadores = new ArrayList<>();
         this.juegoTerminado = false;
-    }
-
-    /**
-     * Arranca la partida. Si el primer turno le corresponde a la PC
-     * (turnoHumano == false), le pide de inmediato su jugada a Minimax.
-     * Si el turno inicial es del humano, no hace nada más: el controlador
-     * queda a la espera de que la vista invoque jugarTurnoHumano() cuando
-     * el usuario toque una casilla.
-     *
-     * <p>fichaHumano, fichaPC y turnoHumano deben configurarse (via sus
-     * setters) antes de llamar a este metodo.</p>
-     */
-    public void iniciarJuego() {
-        juegoTerminado = false;
-        if (!turnoHumano) {
-            realizarJugadaPC();
-        }
+        this.retardoMaquinaMs = RETARDO_MAQUINA_DEFECTO_MS;
+        this.handler = new Handler(Looper.getMainLooper());   
     }
 
     public void agregarObservador(ObservadorJuego obs) {
@@ -50,42 +47,66 @@ public class ControladorJuego {
     }
 
     /**
-     * Procesa el turno del humano sobre la casilla (fila, columna). Si la
-     * jugada es valida y no termina el juego, cede el turno a la PC y le
-     * pide su jugada a Minimax de inmediato: al retornar de este metodo,
-     * el tablero ya refleja tanto la jugada del humano como, si
-     * corresponde, la respuesta de la computadora.
-     *
-     * <p>Clics fuera de turno o sobre una casilla ya ocupada se ignoran
-     * silenciosamente, en vez de lanzar una excepcion, porque son un
-     * evento de UI esperado (el usuario puede tocar el tablero en
-     * cualquier momento) y no un error de programacion.</p>
+     * Arranca la partida con la ficha indicada empezando. Si a quien le
+     * toca es la máquina, le pide su jugada automáticamente (con
+     * retardo). Si le toca a un humano, el controlador queda a la
+     * espera de que la vista invoque jugarTurnoHumano().
      */
+
+    public void iniciarJuego(Ficha fichaInicial) {
+        juegoTerminado = false;
+        fichaTurnoActual = fichaInicial;
+        procesarTurnoSiEsMaquina();
+    }
+
+    /**
+     * Cancela cualquier jugada de máquina pendiente. Debe llamarse al
+     * destruir la pantalla actual (nueva partida, cierre de la
+     * Activity, etc.) para que un Handler.postDelayed() no dispare
+     * sobre una vista que ya no está en pantalla.
+     */
+
+    public void detenerJuego() {
+        juegoTerminado = true;
+        handler.removeCallbacksAndMessages(null);
+    }
+
+    /**
+     * Procesa el turno de un humano sobre la casilla (fila, columna).
+     * Se ignora silenciosamente si no es turno de un humano, si el
+     * juego terminó, o si la casilla ya está ocupada: son eventos de
+     * UI esperados, no errores de programación.
+     */
+
     public void jugarTurnoHumano(int fila, int columna) {
-        if (juegoTerminado || !turnoHumano) {
+        if (juegoTerminado) {
+            return;
+        }
+        Jugador jugadorEnTurno = obtenerJugador(fichaTurnoActual);
+        if (jugadorEnTurno.getTipo() != TipoJugador.HUMANO) {
             return;
         }
         if (tablero.getCasilla(fila, columna) != Ficha.VACIA) {
             return;
         }
-
-        tablero.llenarCasilla(fila, columna, fichaHumano);
-        notificarJugada(fila, columna, fichaHumano);
-
-        if (verificarYNotificarFinDeJuego(fichaHumano)) {
-            return;
-        }
-
-        turnoHumano = false;
-        realizarJugadaPC();
+        aplicarJugada(fila, columna, fichaTurnoActual);
     }
 
+    /**
+     * Sugerencia de jugada para el humano al que le toca el turno
+     * actual. Devuelve null si no le toca a un humano o si el juego
+     * terminó.
+     */
+
     public int[] obtenerSugerenciaParaHumano() {
-        if (juegoTerminado || !turnoHumano) {
+        if (juegoTerminado) {
             return null;
         }
-
-        int[] sugerencia = algoritmo.obtenerMejorJugadaPara(fichaHumano);
+        Jugador jugadorEnTurno = obtenerJugador(fichaTurnoActual);
+        if (jugadorEnTurno.getTipo() != TipoJugador.HUMANO) {
+            return null;
+        }
+        int[] sugerencia = algoritmo.obtenerMejorJugadaPara(fichaTurnoActual);
         if (sugerencia[0] == -1) {
             return null;
         }
@@ -93,50 +114,72 @@ public class ControladorJuego {
     }
 
     /**
-     * Le pide a Minimax la mejor jugada para la PC sobre el tablero
-     * actual, la aplica y notifica el resultado. Minimax comparte la
-     * misma instancia de Tablero que este controlador (ver MainActivity),
-     * asi que siempre analiza el estado mas reciente sin necesidad de
-     * sincronizarlo manualmente.
+     * Si a la ficha en turno le corresponde una máquina, programa su
+     * jugada con el retardo configurado. Se llama tanto al iniciar la
+     * partida como después de cada jugada aplicada, así que en modo
+     * Computadora vs Computadora esta cadena de llamadas hace que la
+     * partida se juegue sola de principio a fin.
      */
-    private void realizarJugadaPC() {
-        int[] jugada = algoritmo.obtenerMejorJugada();
-        if (jugada[0] == -1) {
-            return; // Sin casillas disponibles; no deberia ocurrir si el juego sigue activo.
-        }
-
-        tablero.llenarCasilla(jugada[0], jugada[1], fichaPC);
-        notificarJugada(jugada[0], jugada[1], fichaPC);
-
-        if (verificarYNotificarFinDeJuego(fichaPC)) {
+    private void procesarTurnoSiEsMaquina() {
+        if (juegoTerminado) {
             return;
         }
-
-        turnoHumano = true;
+        Jugador jugadorEnTurno = obtenerJugador(fichaTurnoActual);
+        if (jugadorEnTurno.getTipo() == TipoJugador.MAQUINA) {
+            handler.postDelayed(this::realizarJugadaMaquina, retardoMaquinaMs);
+        }
+    }
+    
+    private void realizarJugadaMaquina() {
+        if (juegoTerminado) {
+            return;
+        }
+        int[] jugada = algoritmo.obtenerMejorJugadaPara(fichaTurnoActual);
+        if (jugada[0] == -1) {
+            return; // Sin casillas disponibles; no debería ocurrir si el juego sigue activo.
+        }
+        aplicarJugada(jugada[0], jugada[1], fichaTurnoActual);
     }
 
     /**
-     * Revisa si, tras colocar {@code ultimaFicha}, el juego termino (por
-     * victoria de esa ficha o por empate) y, de ser asi, notifica a los
-     * observadores con el mensaje correspondiente.
-     *
-     * @return true si el juego termino (victoria o empate)
+     * Coloca la ficha, notifica a la vista, revisa fin de juego y, si
+     * la partida sigue, cede el turno y dispara la jugada de la
+     * máquina si corresponde.
      */
+    private void aplicarJugada(int fila, int columna, Ficha ficha) {
+        tablero.llenarCasilla(fila, columna, ficha);
+        notificarJugada(fila, columna, ficha);
+
+        if (verificarYNotificarFinDeJuego(ficha)) {
+            return;
+        }
+
+        fichaTurnoActual = obtenerFichaContraria(fichaTurnoActual);
+        procesarTurnoSiEsMaquina();
+    }
+    
+
     private boolean verificarYNotificarFinDeJuego(Ficha ultimaFicha) {
         if (tablero.verificarGanador(ultimaFicha)) {
             juegoTerminado = true;
-            String mensaje = (ultimaFicha == fichaHumano)
-                    ? "¡Ganaste! Felicidades."
-                    : "La computadora ha ganado esta partida.";
-            notificarFinDeJuego(mensaje);
+            Jugador ganador = obtenerJugador(ultimaFicha);
+            notificarFinDeJuego(ganador.getNombre() + " ha ganado la partida.");
             return true;
         }
         if (tablero.obtenerCasillasDisponibles().isEmpty()) {
             juegoTerminado = true;
-            notificarFinDeJuego("Empate. Nadie logro completar una linea.");
+            notificarFinDeJuego("Empate. Nadie logró completar una línea.");
             return true;
         }
         return false;
+    }
+
+    private Jugador obtenerJugador(Ficha ficha) {
+        return (ficha == jugadorX.getFicha()) ? jugadorX : jugadorO;
+    }
+
+    private Ficha obtenerFichaContraria(Ficha ficha) {
+        return (ficha == Ficha.X) ? Ficha.O : Ficha.X;
     }
 
     private void notificarJugada(int fila, int columna, Ficha ficha) {
@@ -169,39 +212,39 @@ public class ControladorJuego {
         this.algoritmo = algoritmo;
     }
 
-    public Ficha getFichaHumano() {
-        return fichaHumano;
+    public Jugador getJugadorX() {
+        return jugadorX;
     }
 
-    public void setFichaHumano(Ficha fichaHumano) {
-        this.fichaHumano = fichaHumano;
+    public void setJugadorX(Jugador jugadorX) {
+        this.jugadorX = jugadorX;
     }
 
-    public Ficha getFichaPC() {
-        return fichaPC;
+    public Jugador getJugadorO() {
+        return jugadorO;
     }
 
-    public void setFichaPC(Ficha fichaPC) {
-        this.fichaPC = fichaPC;
+    public void setJugadorO(Jugador jugadorO) {
+        this.jugadorO = jugadorO;
     }
 
-    public boolean isTurnoHumano() {
-        return turnoHumano;
-    }
-
-    public void setTurnoHumano(boolean turnoHumano) {
-        this.turnoHumano = turnoHumano;
+    public Ficha getFichaTurnoActual() {
+        return fichaTurnoActual;
     }
 
     public boolean isJuegoTerminado() {
         return juegoTerminado;
     }
 
-    public List<ObservadorJuego> getObservadores() {
-        return observadores;
+    public int getRetardoMaquinaMs() {
+        return retardoMaquinaMs;
     }
 
-    public void setObservadores(List<ObservadorJuego> observadores) {
-        this.observadores = observadores;
+    public void setRetardoMaquinaMs(int retardoMaquinaMs) {
+        this.retardoMaquinaMs = retardoMaquinaMs;
+    }
+
+    public List<ObservadorJuego> getObservadores() {
+        return observadores;
     }
 }
