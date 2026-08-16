@@ -9,6 +9,7 @@ import java.util.List;
 
 import com.example.commycompanytresenrayaapp.modelo.Ficha;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
+import com.example.commycompanytresenrayaapp.modelo.NodoJugada;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
 
 public class ControladorJuego {
@@ -21,6 +22,10 @@ public class ControladorJuego {
     private Ficha fichaEnTurno;
     private List<ObservadorJuego> observadores;
     private boolean juegoTerminado;
+    private NodoJugada raizArbolPartida;
+    private NodoJugada nodoActualEnArbol;
+    private NodoJugada nodoUltimoAnalisisInjertado;
+    private final List<NodoJugada> caminoReal = new ArrayList<>();
 
     public ControladorJuego(Tablero tablero, Minimax algoritmo) {
         this.tablero = tablero;
@@ -41,7 +46,20 @@ public class ControladorJuego {
      */
     public void iniciarJuego() {
         juegoTerminado = false;
+        raizArbolPartida = new NodoJugada(tablero.clonar(), -1, -1);
+        nodoActualEnArbol = raizArbolPartida;
+        nodoUltimoAnalisisInjertado = null;
+        caminoReal.clear();
+        caminoReal.add(raizArbolPartida);
         notificarCambioDeTurno();
+    }
+
+    public NodoJugada getRaizArbolPartida() {
+        return raizArbolPartida;
+    }
+
+    public List<NodoJugada> getCaminoReal() {
+        return caminoReal;
     }
 
     public void agregarObservador(ObservadorJuego obs) {
@@ -73,6 +91,7 @@ public class ControladorJuego {
         Ficha fichaQueJugo = fichaEnTurno;
         tablero.llenarCasilla(fila, columna, fichaQueJugo);
         notificarJugada(fila, columna, fichaQueJugo);
+        avanzarEnArbol(fila, columna);
 
         if (verificarYNotificarFinDeJuego(fichaQueJugo)) {
             return;
@@ -91,6 +110,7 @@ public class ControladorJuego {
         }
 
         int[] sugerencia = algoritmo.obtenerMejorJugadaPara(fichaEnTurno);
+        injertarUltimoAnalisisSiCorresponde();
         if (sugerencia[0] == -1) {
             return null;
         }
@@ -113,12 +133,14 @@ public class ControladorJuego {
     public void realizarJugadaAutomatica() {
         Ficha fichaQueJuega = fichaEnTurno;
         int[] jugada = algoritmo.obtenerMejorJugadaPara(fichaQueJuega);
+        injertarUltimoAnalisisSiCorresponde();
         if (jugada[0] == -1) {
             return; // Sin casillas disponibles; no deberia ocurrir si el juego sigue activo.
         }
 
         tablero.llenarCasilla(jugada[0], jugada[1], fichaQueJuega);
         notificarJugada(jugada[0], jugada[1], fichaQueJuega);
+        avanzarEnArbol(jugada[0], jugada[1]);
 
         if (verificarYNotificarFinDeJuego(fichaQueJuega)) {
             return;
@@ -163,6 +185,31 @@ public class ControladorJuego {
 
     private Ficha otraFicha(Ficha ficha) {
         return (ficha == Ficha.X) ? Ficha.O : Ficha.X;
+    }
+
+    private void injertarUltimoAnalisisSiCorresponde() {
+        NodoJugada analisis = algoritmo.getRaizUltimoAnalisis();
+        if (analisis == null || nodoActualEnArbol == nodoUltimoAnalisisInjertado) {
+            return;
+        }
+        nodoActualEnArbol.setHijos(new ArrayList<>(analisis.getHijos()));
+        nodoUltimoAnalisisInjertado = nodoActualEnArbol;
+    }
+
+    private void avanzarEnArbol(int fila, int columna) {
+        NodoJugada siguiente = null;
+        for (NodoJugada hijo : nodoActualEnArbol.getHijos()) {
+            if (hijo.getFilaJugada() == fila && hijo.getColumnaJugada() == columna) {
+                siguiente = hijo;
+                break;
+            }
+        }
+        if (siguiente == null) {
+            siguiente = new NodoJugada(tablero.clonar(), fila, columna);
+            nodoActualEnArbol.agregarHijo(siguiente);
+        }
+        nodoActualEnArbol = siguiente;
+        caminoReal.add(siguiente);
     }
 
     private boolean esTurnoDeUnHumano() {

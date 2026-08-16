@@ -14,6 +14,7 @@ public class Minimax {
 
     private Ficha fichaPC;
     private Ficha fichaHumano;
+    private NodoJugada raizUltimoAnalisis;
 
     public Minimax(Tablero tableroActual, Ficha fichaPC, Ficha fichaHumano) {
         this.tableroActual = tableroActual;
@@ -96,6 +97,7 @@ public class Minimax {
 
         NodoJugada raiz = arbol.getRaiz();
         minimax(raiz, PROFUNDIDAD_ANALISIS, true, fichaQueDecide);
+        raizUltimoAnalisis = raiz;
 
         NodoJugada mejorJugada = null;
         int mejorUtilidad = Integer.MIN_VALUE;
@@ -142,6 +144,10 @@ public class Minimax {
 
     public void setFichaHumano(Ficha fichaHumano) {
         this.fichaHumano = fichaHumano;
-    } 
+    }
+
+    public NodoJugada getRaizUltimoAnalisis() {
+        return raizUltimoAnalisis;
+    }
 }
 

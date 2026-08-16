@@ -6,9 +6,11 @@ import android.os.Looper;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -20,6 +22,7 @@ import com.example.commycompanytresenrayaapp.modelo.Ficha;
 import com.example.commycompanytresenrayaapp.modelo.Minimax;
 import com.example.commycompanytresenrayaapp.modelo.Tablero;
 import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
+import com.example.commycompanytresenrayaapp.vista.VistaArbol;
 
 /**
  * Punto de entrada de la app. Siguiendo el diagrama de clases original,
@@ -36,6 +39,8 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private ControladorJuego controlador;
     private PantallaJuego pantalla;
+    private VistaArbol vistaArbol;
+    private LinearLayout seccionArbol;
     private TextView indicadorTurno;
     private final Handler handler = new Handler(Looper.getMainLooper());
 
@@ -194,12 +199,14 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private void montarPantallaDeJuego() {
         pantalla = new PantallaJuego(this, controlador);
+        vistaArbol = new VistaArbol(this, controlador);
         controlador.agregarObservador(this);
+        controlador.agregarObservador(vistaArbol);
         setContentView(construirContenedor(pantalla));
         controlador.iniciarJuego();
     }
 
-    private LinearLayout construirContenedor(PantallaJuego pantalla) {
+    private ScrollView construirContenedor(PantallaJuego pantalla) {
         LinearLayout contenedor = new LinearLayout(this);
         contenedor.setOrientation(LinearLayout.VERTICAL);
         contenedor.setGravity(Gravity.CENTER);
@@ -208,14 +215,90 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         indicadorTurno = new TextView(this);
         indicadorTurno.setTextSize(18);
-        contenedor.addView(indicadorTurno);
+        contenedor.addView(indicadorTurno, paramsCentrados());
 
-        contenedor.addView(pantalla);
+        contenedor.addView(pantalla, paramsCentrados());
+
         if (controlador.getModoJuego() != ModoJuego.PC_VS_PC) {
             contenedor.addView(construirBotonSugerencia(pantalla));
         }
         contenedor.addView(construirBotonReiniciar());
-        return contenedor;
+        contenedor.addView(construirBotonArbol());
+
+        seccionArbol = new LinearLayout(this);
+        seccionArbol.setOrientation(LinearLayout.VERTICAL);
+        seccionArbol.setGravity(Gravity.CENTER_HORIZONTAL);
+        seccionArbol.addView(construirTituloArbol());
+        seccionArbol.addView(construirScrollArbol());
+        contenedor.addView(seccionArbol);
+
+        ScrollView scrollExterno = new ScrollView(this);
+        scrollExterno.setFillViewport(true);
+        scrollExterno.addView(contenedor);
+        return scrollExterno;
+    }
+
+    private LinearLayout.LayoutParams paramsCentrados() {
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.gravity = Gravity.CENTER_HORIZONTAL;
+        return params;
+    }
+
+    private Button construirBotonArbol() {
+        Button botonArbol = new Button(this);
+        botonArbol.setText("Ocultar árbol");
+
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dpToPx(16);
+        botonArbol.setLayoutParams(params);
+
+        botonArbol.setOnClickListener(v -> {
+            boolean estabaVisible = seccionArbol.getVisibility() == View.VISIBLE;
+            seccionArbol.setVisibility(estabaVisible ? View.GONE : View.VISIBLE);
+            botonArbol.setText(estabaVisible ? "Mostrar árbol" : "Ocultar árbol");
+            if (!estabaVisible) {
+                vistaArbol.actualizar(controlador.getRaizArbolPartida());
+            }
+        });
+        return botonArbol;
+    }
+
+    private TextView construirTituloArbol() {
+        TextView titulo = new TextView(this);
+        titulo.setText("Árbol de la partida\n" + leyendaArbol());
+        titulo.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dpToPx(24);
+        titulo.setLayoutParams(params);
+        return titulo;
+    }
+
+    private String leyendaArbol() {
+        String gris = " · Gris: solo analizado";
+        if (controlador.getModoJuego() == ModoJuego.DOS_HUMANOS) {
+            return "Verde: Jugador X · Naranja: Jugador O" + gris;
+        }
+        if (controlador.getModoJuego() == ModoJuego.PC_VS_PC) {
+            return "Verde: Bot 1 (X) · Naranja: Bot 2 (O)" + gris;
+        }
+        boolean humanoEsX = controlador.getFichaHumano() == Ficha.X;
+        String colorHumano = humanoEsX ? "Verde" : "Naranja";
+        String colorPC = humanoEsX ? "Naranja" : "Verde";
+        return colorHumano + ": tus jugadas · " + colorPC + ": la computadora" + gris;
+    }
+
+    private HorizontalScrollView construirScrollArbol() {
+        HorizontalScrollView scrollArbol = new HorizontalScrollView(this);
+        scrollArbol.setFillViewport(true);
+        scrollArbol.addView(vistaArbol);
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.topMargin = dpToPx(8);
+        scrollArbol.setLayoutParams(params);
+        return scrollArbol;
     }
 
     private Button construirBotonSugerencia(PantallaJuego pantalla) {
@@ -230,6 +313,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         botonSugerencia.setOnClickListener(v -> {
             int[] sugerencia = controlador.obtenerSugerenciaParaTurnoActual();
+            vistaArbol.actualizar(controlador.getRaizArbolPartida());
             if (sugerencia == null) {
                 Toast.makeText(this, "No hay sugerencia disponible ahora.", Toast.LENGTH_SHORT).show();
                 return;
