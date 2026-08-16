@@ -55,7 +55,7 @@ public class ControladorJuego {
      * DOS_HUMANOS. Si la jugada es valida y no termina el juego, pasa el
      * turno a la otra ficha y notifica ese cambio: si el nuevo turno le
      * corresponde a la PC, es responsabilidad de quien escuche
-     * onCambioDeTurno() invocar realizarJugadaPC().
+     * onCambioDeTurno() invocar realizarJugadaAutomatica().
      *
      * <p>Clics fuera de turno o sobre una casilla ya ocupada se ignoran
      * silenciosamente, en vez de lanzar una excepcion, porque son un
@@ -63,10 +63,7 @@ public class ControladorJuego {
      * cualquier momento) y no un error de programacion.</p>
      */
     public void jugarTurno(int fila, int columna) {
-        if (juegoTerminado) {
-            return;
-        }
-        if (modoJuego == ModoJuego.CONTRA_PC && fichaEnTurno != fichaHumano) {
+        if (juegoTerminado || !esTurnoDeUnHumano()) {
             return;
         }
         if (tablero.getCasilla(fila, columna) != Ficha.VACIA) {
@@ -101,30 +98,33 @@ public class ControladorJuego {
     }
 
     /**
-     * Le pide a Minimax la mejor jugada para la PC sobre el tablero
-     * actual, la aplica y notifica el resultado. Minimax comparte la
-     * misma instancia de Tablero que este controlador (ver MainActivity),
-     * asi que siempre analiza el estado mas reciente sin necesidad de
-     * sincronizarlo manualmente.
+     * Le pide a Minimax la mejor jugada para quien tenga el turno actual
+     * (fichaEnTurno), la aplica y notifica el resultado. Minimax comparte
+     * la misma instancia de Tablero que este controlador (ver
+     * MainActivity), asi que siempre analiza el estado mas reciente sin
+     * necesidad de sincronizarlo manualmente.
      *
-     * <p>Publico porque ya no se autoinvoca: quien reciba
-     * onCambioDeTurno() con fichaPC es quien decide cuando llamarlo (por
-     * ejemplo, tras una demora para simular que la PC "piensa").</p>
+     * <p>Publico porque no se autoinvoca: quien reciba onCambioDeTurno()
+     * y decida que ese turno es automatico (la PC contra un humano, o
+     * cualquiera de los dos turnos en PC_VS_PC) es quien decide cuando
+     * llamarlo (por ejemplo, tras una demora para simular que la PC
+     * "piensa").</p>
      */
-    public void realizarJugadaPC() {
-        int[] jugada = algoritmo.obtenerMejorJugada();
+    public void realizarJugadaAutomatica() {
+        Ficha fichaQueJuega = fichaEnTurno;
+        int[] jugada = algoritmo.obtenerMejorJugadaPara(fichaQueJuega);
         if (jugada[0] == -1) {
             return; // Sin casillas disponibles; no deberia ocurrir si el juego sigue activo.
         }
 
-        tablero.llenarCasilla(jugada[0], jugada[1], fichaPC);
-        notificarJugada(jugada[0], jugada[1], fichaPC);
+        tablero.llenarCasilla(jugada[0], jugada[1], fichaQueJuega);
+        notificarJugada(jugada[0], jugada[1], fichaQueJuega);
 
-        if (verificarYNotificarFinDeJuego(fichaPC)) {
+        if (verificarYNotificarFinDeJuego(fichaQueJuega)) {
             return;
         }
 
-        fichaEnTurno = fichaHumano;
+        fichaEnTurno = otraFicha(fichaQueJuega);
         notificarCambioDeTurno();
     }
 
@@ -150,6 +150,9 @@ public class ControladorJuego {
     }
 
     private String mensajeDeVictoria(Ficha ganador) {
+        if (modoJuego == ModoJuego.PC_VS_PC) {
+            return "La computadora que jugaba con " + ganador.name() + " ha ganado esta partida.";
+        }
         if (modoJuego == ModoJuego.DOS_HUMANOS) {
             return "¡Gano el jugador con ficha " + ganador.name() + "!";
         }
@@ -160,6 +163,16 @@ public class ControladorJuego {
 
     private Ficha otraFicha(Ficha ficha) {
         return (ficha == Ficha.X) ? Ficha.O : Ficha.X;
+    }
+
+    private boolean esTurnoDeUnHumano() {
+        if (modoJuego == ModoJuego.PC_VS_PC) {
+            return false;
+        }
+        if (modoJuego == ModoJuego.CONTRA_PC) {
+            return fichaEnTurno == fichaHumano;
+        }
+        return true;
     }
 
     private void notificarJugada(int fila, int columna, Ficha ficha) {

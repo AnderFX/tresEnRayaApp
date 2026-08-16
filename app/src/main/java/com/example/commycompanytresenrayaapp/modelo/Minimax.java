@@ -90,10 +90,6 @@ public class Minimax {
         return mejorUtilidad;
     }
 
-    public int[] obtenerMejorJugada() {
-        return obtenerMejorJugadaPara(fichaPC);
-    }
-
     public int[] obtenerMejorJugadaPara(Ficha fichaQueDecide) {
         ArbolNario arbol = new ArbolNario();
         generarArbolDeJuegoPara(arbol, PROFUNDIDAD_ANALISIS, fichaQueDecide);
