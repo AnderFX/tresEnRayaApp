@@ -226,40 +226,9 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     }
 
     private LinearLayout construirSelectorDoble(String textoA, String textoB, boolean[] seleccionadaA) {
-        LinearLayout caja = new LinearLayout(this);
-        caja.setOrientation(LinearLayout.HORIZONTAL);
-        GradientDrawable borde = new GradientDrawable();
-        borde.setStroke(dpToPx(1), Color.GRAY);
-        borde.setCornerRadius(dpToPx(8));
-        caja.setBackground(borde);
-
-        TextView opcionA = new TextView(this);
-        TextView opcionB = new TextView(this);
-        for (TextView opcion : new TextView[]{opcionA, opcionB}) {
-            opcion.setGravity(Gravity.CENTER);
-            opcion.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-            opcion.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-        }
-        opcionA.setText(textoA);
-        opcionB.setText(textoB);
-
-        View divisor = new View(this);
-        divisor.setBackgroundColor(Color.GRAY);
-        divisor.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(1), LinearLayout.LayoutParams.MATCH_PARENT));
-
-        Runnable[] refrescar = new Runnable[1];
-        refrescar[0] = () -> {
-            opcionA.setBackgroundColor(seleccionadaA[0] ? COLOR_OPCION_SELECCIONADA : COLOR_OPCION_NORMAL);
-            opcionB.setBackgroundColor(seleccionadaA[0] ? COLOR_OPCION_NORMAL : COLOR_OPCION_SELECCIONADA);
-        };
-        opcionA.setOnClickListener(v -> { seleccionadaA[0] = true; refrescar[0].run(); });
-        opcionB.setOnClickListener(v -> { seleccionadaA[0] = false; refrescar[0].run(); });
-        refrescar[0].run();
-
-        caja.addView(opcionA);
-        caja.addView(divisor);
-        caja.addView(opcionB);
-        return caja;
+        int[] indiceSeleccionado = {seleccionadaA[0] ? 0 : 1};
+        return construirSelectorMultiple(new String[]{textoA, textoB}, indiceSeleccionado,
+                () -> seleccionadaA[0] = indiceSeleccionado[0] == 0);
     }
 
     private LinearLayout construirSelectorMultiple(String[] textos, int[] indiceSeleccionado, Runnable alCambiar) {
@@ -311,16 +280,20 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         return params;
     }
 
-    private Button construirBotonArbol() {
-        Button botonArbol = new Button(this);
-        botonArbol.setText("Ocultar árbol");
-        botonArbol.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
+    private Button construirBotonJuego(String texto) {
+        Button boton = new Button(this);
+        boton.setText(texto);
+        boton.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 dpToPx(ANCHO_BOTON_JUEGO_DP), LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
-        botonArbol.setLayoutParams(params);
+        boton.setLayoutParams(params);
+        return boton;
+    }
 
+    private Button construirBotonArbol() {
+        Button botonArbol = construirBotonJuego("Ocultar árbol");
         botonArbol.setOnClickListener(v -> {
             boolean estabaVisible = seccionArbol.getVisibility() == View.VISIBLE;
             seccionArbol.setVisibility(estabaVisible ? View.GONE : View.VISIBLE);
@@ -369,16 +342,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     }
 
     private Button construirBotonSugerencia(PantallaJuego pantalla) {
-        Button botonSugerencia = new Button(this);
-        botonSugerencia.setText("Sugerencia");
-        botonSugerencia.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                dpToPx(ANCHO_BOTON_JUEGO_DP),
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.topMargin = dpToPx(16);
-        botonSugerencia.setLayoutParams(params);
-
+        Button botonSugerencia = construirBotonJuego("Sugerencia");
         botonSugerencia.setOnClickListener(v -> {
             int[] sugerencia = controlador.obtenerSugerenciaParaTurnoActual();
             vistaArbol.actualizar(controlador.getRaizArbolPartida());
@@ -392,16 +356,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     }
 
     private Button construirBotonReiniciar() {
-        Button botonReiniciar = new Button(this);
-        botonReiniciar.setText("Nueva Partida");
-        botonReiniciar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                dpToPx(ANCHO_BOTON_JUEGO_DP),
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        params.topMargin = dpToPx(16);
-        botonReiniciar.setLayoutParams(params);
-
+        Button botonReiniciar = construirBotonJuego("Nueva Partida");
         botonReiniciar.setOnClickListener(v -> recreate());
         return botonReiniciar;
     }
