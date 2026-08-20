@@ -1,5 +1,8 @@
 package com.example.commycompanytresenrayaapp;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -36,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private static final long DEMORA_JUGADA_PC_MS = 500;
     private static final long DEMORA_PC_VS_PC_MS = 1000;
+    private static final int ANCHO_BOTON_JUEGO_DP = 220;
 
     private ControladorJuego controlador;
     private PantallaJuego pantalla;
@@ -57,6 +61,17 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         config.setGravity(Gravity.CENTER);
         int padding = dpToPx(24);
         config.setPadding(padding, padding, padding, padding);
+
+        TextView titulo = new TextView(this);
+        titulo.setText("Tres en Raya");
+        titulo.setTextSize(32);
+        titulo.setGravity(Gravity.CENTER);
+        titulo.setTypeface(titulo.getTypeface(), Typeface.BOLD);
+        titulo.setTextColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            titulo.setFontVariationSettings("'wght' 900");
+        }
+        config.addView(titulo);
 
         // --- GRUPO 0: MODO ---
         TextView tituloModo = new TextView(this);
@@ -142,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         // --- BOTÓN COMENZAR ---
         Button botonComenzar = new Button(this);
         botonComenzar.setText("Comenzar Juego");
+        botonComenzar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
         botonComenzar.setOnClickListener(v -> {
             if (opcionPcVsPc.isChecked()) {
                 iniciarPartidaPcVsPc();
@@ -248,9 +264,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonArbol() {
         Button botonArbol = new Button(this);
         botonArbol.setText("Ocultar árbol");
+        botonArbol.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                dpToPx(ANCHO_BOTON_JUEGO_DP), LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonArbol.setLayoutParams(params);
 
@@ -304,9 +321,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonSugerencia(PantallaJuego pantalla) {
         Button botonSugerencia = new Button(this);
         botonSugerencia.setText("Sugerencia");
+        botonSugerencia.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dpToPx(ANCHO_BOTON_JUEGO_DP),
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonSugerencia.setLayoutParams(params);
@@ -326,9 +344,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonReiniciar() {
         Button botonReiniciar = new Button(this);
         botonReiniciar.setText("Nueva Partida");
+        botonReiniciar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dpToPx(ANCHO_BOTON_JUEGO_DP),
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonReiniciar.setLayoutParams(params);
