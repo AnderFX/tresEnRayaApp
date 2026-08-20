@@ -27,14 +27,6 @@ import com.example.commycompanytresenrayaapp.modelo.Tablero;
 import com.example.commycompanytresenrayaapp.vista.PantallaJuego;
 import com.example.commycompanytresenrayaapp.vista.VistaArbol;
 
-/**
- * Punto de entrada de la app. Siguiendo el diagrama de clases original,
- * MainActivity es solo el "ensamblador": crea el Modelo (Tablero,
- * Minimax, ControladorJuego), instancia la Vista (PantallaJuego, que
- * implementa ObservadorJuego y construye su propia UI por codigo) y la
- * incrusta en la pantalla. MainActivity tambien se registra como
- * ObservadorJuego, solo para reflejar el turno actual en pantalla.
- */
 public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private static final long DEMORA_JUGADA_PC_MS = 500;
