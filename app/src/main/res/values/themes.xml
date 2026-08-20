@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Commycompanytresenrayaapp" parent="Theme.MaterialComponents.DayNight.NoActionBar" />
+    <style name="Theme.Commycompanytresenrayaapp" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="fontFamily">sans-serif</item>
+    </style>
 </resources>

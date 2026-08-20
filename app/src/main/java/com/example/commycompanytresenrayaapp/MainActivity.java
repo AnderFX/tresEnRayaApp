@@ -1,5 +1,9 @@
 package com.example.commycompanytresenrayaapp;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -8,12 +12,11 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.RadioGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
 import com.example.commycompanytresenrayaapp.controlador.ModoJuego;
@@ -36,6 +39,9 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
     private static final long DEMORA_JUGADA_PC_MS = 500;
     private static final long DEMORA_PC_VS_PC_MS = 1000;
+    private static final int ANCHO_BOTON_JUEGO_DP = 220;
+    private static final int COLOR_OPCION_SELECCIONADA = Color.parseColor("#BDBDBD");
+    private static final int COLOR_OPCION_NORMAL = Color.parseColor("#F0F0F0");
 
     private ControladorJuego controlador;
     private PantallaJuego pantalla;
@@ -58,30 +64,25 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         int padding = dpToPx(24);
         config.setPadding(padding, padding, padding, padding);
 
+        TextView titulo = new TextView(this);
+        titulo.setText("TRES EN RAYA");
+        titulo.setTextSize(32);
+        titulo.setGravity(Gravity.CENTER);
+        Typeface montserrat = ResourcesCompat.getFont(this, R.font.montserrat);
+        titulo.setTypeface(montserrat, Typeface.BOLD);
+        titulo.setTextColor(Color.BLACK);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            titulo.setFontVariationSettings("'wght' 900");
+        }
+        config.addView(titulo);
+
         // --- GRUPO 0: MODO ---
         TextView tituloModo = new TextView(this);
         tituloModo.setText("¿Cómo quieres jugar?");
+        tituloModo.setTextSize(18);
         config.addView(tituloModo);
 
-        RadioGroup grupoModo = new RadioGroup(this);
-
-        RadioButton opcionContraPC = new RadioButton(this);
-        opcionContraPC.setId(View.generateViewId());
-        opcionContraPC.setText("Contra la computadora");
-        opcionContraPC.setChecked(true);
-
-        RadioButton opcionDosHumanos = new RadioButton(this);
-        opcionDosHumanos.setId(View.generateViewId());
-        opcionDosHumanos.setText("Dos jugadores humanos");
-
-        RadioButton opcionPcVsPc = new RadioButton(this);
-        opcionPcVsPc.setId(View.generateViewId());
-        opcionPcVsPc.setText("Computadora vs. computadora");
-
-        grupoModo.addView(opcionContraPC);
-        grupoModo.addView(opcionDosHumanos);
-        grupoModo.addView(opcionPcVsPc);
-        config.addView(grupoModo);
+        int[] modoSeleccionado = {0}; // 0 = PvB, 1 = PvP, 2 = BvB
 
         // --- GRUPO 1: SÍMBOLO ---
         LinearLayout seccionSimbolo = new LinearLayout(this);
@@ -90,22 +91,11 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         TextView tituloSimbolo = new TextView(this);
         tituloSimbolo.setText("¿Con qué símbolo quieres jugar?");
+        tituloSimbolo.setTextSize(18);
         seccionSimbolo.addView(tituloSimbolo);
 
-        RadioGroup grupoSimbolo = new RadioGroup(this);
-
-        RadioButton opcionX = new RadioButton(this);
-        opcionX.setId(View.generateViewId()); // necesario para que el RadioGroup sepa cual esta marcado
-        opcionX.setText("X");
-        opcionX.setChecked(true);
-
-        RadioButton opcionO = new RadioButton(this);
-        opcionO.setId(View.generateViewId());
-        opcionO.setText("O");
-
-        grupoSimbolo.addView(opcionX);
-        grupoSimbolo.addView(opcionO);
-        seccionSimbolo.addView(grupoSimbolo);
+        boolean[] simboloEsX = {true};
+        seccionSimbolo.addView(construirSelectorDoble("X", "O", simboloEsX));
         config.addView(seccionSimbolo);
 
         // --- GRUPO 2: TURNO ---
@@ -115,45 +105,35 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         TextView tituloTurno = new TextView(this);
         tituloTurno.setText("¿Quién empieza la partida?");
+        tituloTurno.setTextSize(18);
         seccionTurno.addView(tituloTurno);
 
-        RadioGroup grupoTurno = new RadioGroup(this);
-
-        RadioButton opcionHumano = new RadioButton(this);
-        opcionHumano.setId(View.generateViewId());
-        opcionHumano.setText("Yo (humano)");
-        opcionHumano.setChecked(true);
-
-        RadioButton opcionPC = new RadioButton(this);
-        opcionPC.setId(View.generateViewId());
-        opcionPC.setText("La computadora");
-
-        grupoTurno.addView(opcionHumano);
-        grupoTurno.addView(opcionPC);
-        seccionTurno.addView(grupoTurno);
+        boolean[] empiezaHumano = {true};
+        seccionTurno.addView(construirSelectorDoble("Yo", "PC", empiezaHumano));
         config.addView(seccionTurno);
 
-        grupoModo.setOnCheckedChangeListener((group, checkedId) -> {
-            boolean esContraPC = checkedId == opcionContraPC.getId();
+        LinearLayout selectorModo = construirSelectorMultiple(new String[]{"PvB", "PvP", "BvB"}, modoSeleccionado, () -> {
+            boolean esContraPC = modoSeleccionado[0] == 0;
             seccionSimbolo.setVisibility(esContraPC ? View.VISIBLE : View.GONE);
             seccionTurno.setVisibility(esContraPC ? View.VISIBLE : View.GONE);
         });
+        config.addView(selectorModo, 2);
 
         // --- BOTÓN COMENZAR ---
         Button botonComenzar = new Button(this);
         botonComenzar.setText("Comenzar Juego");
+        botonComenzar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
         botonComenzar.setOnClickListener(v -> {
-            if (opcionPcVsPc.isChecked()) {
+            if (modoSeleccionado[0] == 2) {
                 iniciarPartidaPcVsPc();
                 return;
             }
-            if (opcionDosHumanos.isChecked()) {
+            if (modoSeleccionado[0] == 1) {
                 iniciarPartidaDosHumanos();
                 return;
             }
-            Ficha fichaHumano = opcionX.isChecked() ? Ficha.X : Ficha.O;
-            boolean humanoEmpieza = opcionHumano.isChecked();
-            iniciarPartidaContraPC(fichaHumano, humanoEmpieza);
+            Ficha fichaHumano = simboloEsX[0] ? Ficha.X : Ficha.O;
+            iniciarPartidaContraPC(fichaHumano, empiezaHumano[0]);
         });
         config.addView(botonComenzar);
 
@@ -209,21 +189,28 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private ScrollView construirContenedor(PantallaJuego pantalla) {
         LinearLayout contenedor = new LinearLayout(this);
         contenedor.setOrientation(LinearLayout.VERTICAL);
-        contenedor.setGravity(Gravity.CENTER);
+        contenedor.setGravity(Gravity.CENTER_HORIZONTAL);
         int padding = dpToPx(24);
         contenedor.setPadding(padding, padding, padding, padding);
 
+        LinearLayout bloquePrincipal = new LinearLayout(this);
+        bloquePrincipal.setOrientation(LinearLayout.VERTICAL);
+        bloquePrincipal.setGravity(Gravity.CENTER);
+        int alturaReservada = getResources().getDisplayMetrics().heightPixels - padding * 2 - dpToPx(80);
+        bloquePrincipal.setMinimumHeight(Math.max(0, alturaReservada));
+
         indicadorTurno = new TextView(this);
         indicadorTurno.setTextSize(18);
-        contenedor.addView(indicadorTurno, paramsCentrados());
+        bloquePrincipal.addView(indicadorTurno, paramsCentrados());
 
-        contenedor.addView(pantalla, paramsCentrados());
+        bloquePrincipal.addView(pantalla, paramsCentrados());
 
         if (controlador.getModoJuego() != ModoJuego.PC_VS_PC) {
-            contenedor.addView(construirBotonSugerencia(pantalla));
+            bloquePrincipal.addView(construirBotonSugerencia(pantalla));
         }
-        contenedor.addView(construirBotonReiniciar());
-        contenedor.addView(construirBotonArbol());
+        bloquePrincipal.addView(construirBotonReiniciar());
+        bloquePrincipal.addView(construirBotonArbol());
+        contenedor.addView(bloquePrincipal);
 
         seccionArbol = new LinearLayout(this);
         seccionArbol.setOrientation(LinearLayout.VERTICAL);
@@ -238,6 +225,85 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         return scrollExterno;
     }
 
+    private LinearLayout construirSelectorDoble(String textoA, String textoB, boolean[] seleccionadaA) {
+        LinearLayout caja = new LinearLayout(this);
+        caja.setOrientation(LinearLayout.HORIZONTAL);
+        GradientDrawable borde = new GradientDrawable();
+        borde.setStroke(dpToPx(1), Color.GRAY);
+        borde.setCornerRadius(dpToPx(8));
+        caja.setBackground(borde);
+
+        TextView opcionA = new TextView(this);
+        TextView opcionB = new TextView(this);
+        for (TextView opcion : new TextView[]{opcionA, opcionB}) {
+            opcion.setGravity(Gravity.CENTER);
+            opcion.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
+            opcion.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+        }
+        opcionA.setText(textoA);
+        opcionB.setText(textoB);
+
+        View divisor = new View(this);
+        divisor.setBackgroundColor(Color.GRAY);
+        divisor.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(1), LinearLayout.LayoutParams.MATCH_PARENT));
+
+        Runnable[] refrescar = new Runnable[1];
+        refrescar[0] = () -> {
+            opcionA.setBackgroundColor(seleccionadaA[0] ? COLOR_OPCION_SELECCIONADA : COLOR_OPCION_NORMAL);
+            opcionB.setBackgroundColor(seleccionadaA[0] ? COLOR_OPCION_NORMAL : COLOR_OPCION_SELECCIONADA);
+        };
+        opcionA.setOnClickListener(v -> { seleccionadaA[0] = true; refrescar[0].run(); });
+        opcionB.setOnClickListener(v -> { seleccionadaA[0] = false; refrescar[0].run(); });
+        refrescar[0].run();
+
+        caja.addView(opcionA);
+        caja.addView(divisor);
+        caja.addView(opcionB);
+        return caja;
+    }
+
+    private LinearLayout construirSelectorMultiple(String[] textos, int[] indiceSeleccionado, Runnable alCambiar) {
+        LinearLayout caja = new LinearLayout(this);
+        caja.setOrientation(LinearLayout.HORIZONTAL);
+        GradientDrawable borde = new GradientDrawable();
+        borde.setStroke(dpToPx(1), Color.GRAY);
+        borde.setCornerRadius(dpToPx(8));
+        caja.setBackground(borde);
+
+        TextView[] opciones = new TextView[textos.length];
+        Runnable[] refrescar = new Runnable[1];
+        for (int i = 0; i < textos.length; i++) {
+            TextView opcion = new TextView(this);
+            opcion.setText(textos[i]);
+            opcion.setGravity(Gravity.CENTER);
+            opcion.setPadding(dpToPx(16), dpToPx(12), dpToPx(16), dpToPx(12));
+            opcion.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
+            opciones[i] = opcion;
+            caja.addView(opcion);
+            if (i < textos.length - 1) {
+                View divisor = new View(this);
+                divisor.setBackgroundColor(Color.GRAY);
+                divisor.setLayoutParams(new LinearLayout.LayoutParams(dpToPx(1), LinearLayout.LayoutParams.MATCH_PARENT));
+                caja.addView(divisor);
+            }
+            final int indice = i;
+            opcion.setOnClickListener(v -> {
+                indiceSeleccionado[0] = indice;
+                refrescar[0].run();
+                if (alCambiar != null) {
+                    alCambiar.run();
+                }
+            });
+        }
+        refrescar[0] = () -> {
+            for (int i = 0; i < opciones.length; i++) {
+                opciones[i].setBackgroundColor(i == indiceSeleccionado[0] ? COLOR_OPCION_SELECCIONADA : COLOR_OPCION_NORMAL);
+            }
+        };
+        refrescar[0].run();
+        return caja;
+    }
+
     private LinearLayout.LayoutParams paramsCentrados() {
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -248,9 +314,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonArbol() {
         Button botonArbol = new Button(this);
         botonArbol.setText("Ocultar árbol");
+        botonArbol.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+                dpToPx(ANCHO_BOTON_JUEGO_DP), LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonArbol.setLayoutParams(params);
 
@@ -304,9 +371,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonSugerencia(PantallaJuego pantalla) {
         Button botonSugerencia = new Button(this);
         botonSugerencia.setText("Sugerencia");
+        botonSugerencia.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dpToPx(ANCHO_BOTON_JUEGO_DP),
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonSugerencia.setLayoutParams(params);
@@ -326,9 +394,10 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private Button construirBotonReiniciar() {
         Button botonReiniciar = new Button(this);
         botonReiniciar.setText("Nueva Partida");
+        botonReiniciar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
+                dpToPx(ANCHO_BOTON_JUEGO_DP),
                 LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(16);
         botonReiniciar.setLayoutParams(params);
