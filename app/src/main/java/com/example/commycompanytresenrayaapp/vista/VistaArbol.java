@@ -23,6 +23,7 @@ public class VistaArbol extends View implements ObservadorJuego {
     private static final int ESPACIADO_HORIZONTAL_DP = 70;
     private static final int ESPACIADO_VERTICAL_DP = 100;
     private static final int RADIO_NODO_DP = 22;
+    private static final int MARGEN_SUPERIOR_DP = 12;
 
     private static final int COLOR_RELLENO_X = Color.parseColor("#C8E6C9");
     private static final int COLOR_BORDE_X = Color.parseColor("#2E7D32");
@@ -119,7 +120,8 @@ public class VistaArbol extends View implements ObservadorJuego {
         float anchoUnidades = (anchoRaiz != null) ? anchoRaiz : 1f;
         int nivelesDeProfundidad = (raiz != null) ? profundidadMaxima + 1 : 1;
         int anchoContenido = Math.round(anchoUnidades * dpToPx(ESPACIADO_HORIZONTAL_DP)) + dpToPx(RADIO_NODO_DP) * 2;
-        int altoDeseado = nivelesDeProfundidad * dpToPx(ESPACIADO_VERTICAL_DP) + dpToPx(RADIO_NODO_DP) * 2;
+        int altoDeseado = nivelesDeProfundidad * dpToPx(ESPACIADO_VERTICAL_DP) + dpToPx(RADIO_NODO_DP) * 2
+                + dpToPx(MARGEN_SUPERIOR_DP);
 
         int anchoFinal = anchoContenido;
         if (MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY) {
@@ -143,13 +145,14 @@ public class VistaArbol extends View implements ObservadorJuego {
 
     private void dibujarNodo(Canvas canvas, NodoJugada nodo) {
         float radioPx = dpToPx(RADIO_NODO_DP);
+        float margenSuperiorPx = dpToPx(MARGEN_SUPERIOR_DP);
         float x = posicionX.get(nodo) * dpToPx(ESPACIADO_HORIZONTAL_DP);
-        float y = profundidadNodo.get(nodo) * dpToPx(ESPACIADO_VERTICAL_DP) + radioPx;
+        float y = profundidadNodo.get(nodo) * dpToPx(ESPACIADO_VERTICAL_DP) + radioPx + margenSuperiorPx;
         boolean nodoJugado = caminoReal.contains(nodo);
 
         for (NodoJugada hijo : nodo.getHijos()) {
             float xHijo = posicionX.get(hijo) * dpToPx(ESPACIADO_HORIZONTAL_DP);
-            float yHijo = profundidadNodo.get(hijo) * dpToPx(ESPACIADO_VERTICAL_DP) + radioPx;
+            float yHijo = profundidadNodo.get(hijo) * dpToPx(ESPACIADO_VERTICAL_DP) + radioPx + margenSuperiorPx;
             boolean tramoJugado = nodoJugado && caminoReal.contains(hijo);
             lineaPaint.setColor(tramoJugado ? COLOR_BORDE_CAMINO : COLOR_BORDE_ANALISIS);
             lineaPaint.setStrokeWidth(dpToPx(tramoJugado ? 3 : 1));

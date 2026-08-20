@@ -18,6 +18,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.res.ResourcesCompat;
 
 import com.example.commycompanytresenrayaapp.controlador.ControladorJuego;
 import com.example.commycompanytresenrayaapp.controlador.ModoJuego;
@@ -69,7 +70,8 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         titulo.setText("Tres en Raya");
         titulo.setTextSize(32);
         titulo.setGravity(Gravity.CENTER);
-        titulo.setTypeface(titulo.getTypeface(), Typeface.BOLD);
+        Typeface montserrat = ResourcesCompat.getFont(this, R.font.montserrat);
+        titulo.setTypeface(montserrat, Typeface.BOLD);
         titulo.setTextColor(Color.BLACK);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             titulo.setFontVariationSettings("'wght' 900");
@@ -79,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         // --- GRUPO 0: MODO ---
         TextView tituloModo = new TextView(this);
         tituloModo.setText("¿Cómo quieres jugar?");
-        hacerNegrita(tituloModo);
         config.addView(tituloModo);
 
         RadioGroup grupoModo = new RadioGroup(this);
@@ -88,17 +89,14 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         opcionContraPC.setId(View.generateViewId());
         opcionContraPC.setText("Contra la computadora");
         opcionContraPC.setChecked(true);
-        hacerNegrita(opcionContraPC);
 
         RadioButton opcionDosHumanos = new RadioButton(this);
         opcionDosHumanos.setId(View.generateViewId());
         opcionDosHumanos.setText("Dos jugadores humanos");
-        hacerNegrita(opcionDosHumanos);
 
         RadioButton opcionPcVsPc = new RadioButton(this);
         opcionPcVsPc.setId(View.generateViewId());
         opcionPcVsPc.setText("Computadora vs. computadora");
-        hacerNegrita(opcionPcVsPc);
 
         grupoModo.addView(opcionContraPC);
         grupoModo.addView(opcionDosHumanos);
@@ -112,7 +110,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         TextView tituloSimbolo = new TextView(this);
         tituloSimbolo.setText("¿Con qué símbolo quieres jugar?");
-        hacerNegrita(tituloSimbolo);
         seccionSimbolo.addView(tituloSimbolo);
 
         boolean[] simboloEsX = {true};
@@ -126,7 +123,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
 
         TextView tituloTurno = new TextView(this);
         tituloTurno.setText("¿Quién empieza la partida?");
-        hacerNegrita(tituloTurno);
         seccionTurno.addView(tituloTurno);
 
         boolean[] empiezaHumano = {true};
@@ -143,7 +139,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         Button botonComenzar = new Button(this);
         botonComenzar.setText("Comenzar Juego");
         botonComenzar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-        hacerNegrita(botonComenzar);
         botonComenzar.setOnClickListener(v -> {
             if (opcionPcVsPc.isChecked()) {
                 iniciarPartidaPcVsPc();
@@ -210,22 +205,28 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     private ScrollView construirContenedor(PantallaJuego pantalla) {
         LinearLayout contenedor = new LinearLayout(this);
         contenedor.setOrientation(LinearLayout.VERTICAL);
-        contenedor.setGravity(Gravity.CENTER);
+        contenedor.setGravity(Gravity.CENTER_HORIZONTAL);
         int padding = dpToPx(24);
         contenedor.setPadding(padding, padding, padding, padding);
 
+        LinearLayout bloquePrincipal = new LinearLayout(this);
+        bloquePrincipal.setOrientation(LinearLayout.VERTICAL);
+        bloquePrincipal.setGravity(Gravity.CENTER);
+        int alturaReservada = getResources().getDisplayMetrics().heightPixels - padding * 2 - dpToPx(80);
+        bloquePrincipal.setMinimumHeight(Math.max(0, alturaReservada));
+
         indicadorTurno = new TextView(this);
         indicadorTurno.setTextSize(18);
-        hacerNegrita(indicadorTurno);
-        contenedor.addView(indicadorTurno, paramsCentrados());
+        bloquePrincipal.addView(indicadorTurno, paramsCentrados());
 
-        contenedor.addView(pantalla, paramsCentrados());
+        bloquePrincipal.addView(pantalla, paramsCentrados());
 
         if (controlador.getModoJuego() != ModoJuego.PC_VS_PC) {
-            contenedor.addView(construirBotonSugerencia(pantalla));
+            bloquePrincipal.addView(construirBotonSugerencia(pantalla));
         }
-        contenedor.addView(construirBotonReiniciar());
-        contenedor.addView(construirBotonArbol());
+        bloquePrincipal.addView(construirBotonReiniciar());
+        bloquePrincipal.addView(construirBotonArbol());
+        contenedor.addView(bloquePrincipal);
 
         seccionArbol = new LinearLayout(this);
         seccionArbol.setOrientation(LinearLayout.VERTICAL);
@@ -254,7 +255,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
             opcion.setGravity(Gravity.CENTER);
             opcion.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
             opcion.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-            hacerNegrita(opcion);
         }
         opcionA.setText(textoA);
         opcionB.setText(textoB);
@@ -289,7 +289,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         Button botonArbol = new Button(this);
         botonArbol.setText("Ocultar árbol");
         botonArbol.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-        hacerNegrita(botonArbol);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 dpToPx(ANCHO_BOTON_JUEGO_DP), LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -311,7 +310,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         TextView titulo = new TextView(this);
         titulo.setText("Árbol de la partida\n" + leyendaArbol());
         titulo.setGravity(Gravity.CENTER);
-        hacerNegrita(titulo);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         params.topMargin = dpToPx(24);
@@ -348,7 +346,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         Button botonSugerencia = new Button(this);
         botonSugerencia.setText("Sugerencia");
         botonSugerencia.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-        hacerNegrita(botonSugerencia);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 dpToPx(ANCHO_BOTON_JUEGO_DP),
@@ -372,7 +369,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
         Button botonReiniciar = new Button(this);
         botonReiniciar.setText("Nueva Partida");
         botonReiniciar.setPadding(dpToPx(24), dpToPx(12), dpToPx(24), dpToPx(12));
-        hacerNegrita(botonReiniciar);
 
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 dpToPx(ANCHO_BOTON_JUEGO_DP),
@@ -429,10 +425,6 @@ public class MainActivity extends AppCompatActivity implements ObservadorJuego {
     protected void onDestroy() {
         super.onDestroy();
         handler.removeCallbacksAndMessages(null);
-    }
-
-    private void hacerNegrita(TextView vista) {
-        vista.setTypeface(vista.getTypeface(), Typeface.BOLD);
     }
 
     private int dpToPx(int dp) {
